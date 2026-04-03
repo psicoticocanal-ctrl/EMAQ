@@ -1,0 +1,248 @@
+<!-- Gestión de Certificaciones (Certificates) -->
+<!DOCTYPE html>
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Gestión de Certificaciones</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f49bd",
+                        "accent-orange": "#f97316",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+        .certificate-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111318] dark:text-gray-100 min-h-screen">
+    <div
+        class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+        <div
+            class="flex items-center bg-white dark:bg-gray-900 p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+            <div class="text-[#111318] dark:text-white flex size-12 shrink-0 items-center justify-start cursor-pointer">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </div>
+            <h2
+                class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
+                Certificaciones</h2>
+            <div class="flex w-12 items-center justify-end">
+                <button
+                    class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 bg-transparent text-[#111318] dark:text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+                    <span class="material-symbols-outlined">account_circle</span>
+                </button>
+            </div>
+        </div>
+        <h2
+            class="text-[#111318] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-6">
+            Vista Previa del Certificado</h2>
+        <div class="p-4 @container">
+            <div
+                class="flex flex-col items-stretch justify-start rounded-xl shadow-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div
+                    class="relative w-full aspect-[1.4/1] certificate-gradient p-6 flex flex-col justify-between border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex justify-between items-start">
+                        <div class="flex flex-col">
+                            <div class="w-12 h-12 bg-primary rounded flex items-center justify-center text-white mb-2">
+                                <span class="material-symbols-outlined text-3xl">precision_manufacturing</span>
+                            </div>
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-primary">INSTITUTO DE
+                                MAQUINARIA PESADA</span>
+                        </div>
+                        <div class="w-16 h-16 bg-white p-1 border border-gray-200 rounded">
+                            <div class="w-full h-full bg-slate-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-gray-400">qr_code_2</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">CERTIFICA QUE</p>
+                        <h3 class="text-2xl font-bold text-gray-900">John Doe</h3>
+                        <div class="h-[1px] w-32 bg-primary/30 mx-auto my-2"></div>
+                        <p class="text-[10px] sm:text-xs text-gray-600 leading-tight">Ha completado con éxito los
+                            requisitos para</p>
+                        <p class="text-base sm:text-lg font-bold text-primary mt-1">Especialista en Excavadora Nivel II
+                        </p>
+                    </div>
+                    <div class="flex justify-between items-end text-[10px] text-gray-400 uppercase tracking-tighter">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-gray-800">12/05/2023</span>
+                            <span>FECHA DE EMISIÓN</span>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="font-bold text-gray-800">HM-99281</span>
+                            <span>ID DE VERIFICACIÓN</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex w-full min-w-72 grow flex-col items-stretch justify-center gap-4 py-4 px-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p
+                                class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
+                                Excavadora Nivel II</p>
+                            <p class="text-[#616f89] dark:text-gray-400 text-sm font-normal">Certificación Activa •
+                                Vence 2025</p>
+                        </div>
+                        <div
+                            class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                            VÁLIDO
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button
+                            class="flex-1 flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold gap-2">
+                            <span class="material-symbols-outlined text-lg">picture_as_pdf</span>
+                            <span class="truncate">Ver PDF Completo</span>
+                        </button>
+                        <button
+                            class="flex items-center justify-center rounded-lg h-10 w-12 bg-primary/10 text-primary">
+                            <span class="material-symbols-outlined">share</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="pt-4">
+            <h2
+                class="text-[#111318] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-2">
+                Historial de Certificaciones</h2>
+            <p class="px-4 text-sm text-[#616f89] dark:text-gray-400 pb-3">Visualiza y gestiona tus cualificaciones
+                previas</p>
+        </div>
+        <div
+            class="flex flex-col bg-white dark:bg-gray-900 mx-4 rounded-xl border border-gray-100 dark:border-gray-800 mb-3">
+            <div class="flex gap-4 p-4 justify-between">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                        <span class="material-symbols-outlined">workspace_premium</span>
+                    </div>
+                    <div class="flex flex-1 flex-col justify-center">
+                        <p class="text-[#111318] dark:text-white text-base font-bold leading-normal">Seguridad en
+                            Montacargas</p>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-normal leading-normal">ID: FL-88210 •
+                            Emitido: 12/05/2023</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
+                            <p class="text-[#616f89] dark:text-gray-400 text-xs font-medium">Válido hasta 12/2025</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="shrink-0 flex flex-col gap-2">
+                    <button
+                        class="flex min-w-[40px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-background-light dark:bg-gray-800 text-[#111318] dark:text-white border border-gray-200 dark:border-gray-700">
+                        <span class="material-symbols-outlined text-lg">download</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div
+            class="flex flex-col bg-white dark:bg-gray-900 mx-4 rounded-xl border border-gray-100 dark:border-gray-800 mb-3">
+            <div class="flex gap-4 p-4 justify-between">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="text-accent-orange flex items-center justify-center rounded-lg bg-accent-orange/10 shrink-0 size-12">
+                        <span class="material-symbols-outlined">warning</span>
+                    </div>
+                    <div class="flex flex-1 flex-col justify-center">
+                        <p class="text-[#111318] dark:text-white text-base font-bold leading-normal">Supervisor de Obra
+                            Nivel I</p>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-normal leading-normal">ID: SS-11029 •
+                            Emitido: 01/10/2022</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="flex h-2 w-2 rounded-full bg-accent-orange"></span>
+                            <p class="text-accent-orange text-xs font-bold uppercase">VENCE EN 14 DÍAS</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="shrink-0 flex flex-col gap-2">
+                    <button
+                        class="flex min-w-[40px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-background-light dark:bg-gray-800 text-[#111318] dark:text-white border border-gray-200 dark:border-gray-700">
+                        <span class="material-symbols-outlined text-lg">download</span>
+                    </button>
+                </div>
+            </div>
+            <div class="px-4 pb-4">
+                <button
+                    class="w-full h-8 bg-accent-orange/10 text-accent-orange text-xs font-bold rounded uppercase tracking-wide">
+                    RENOVAR AHORA
+                </button>
+            </div>
+        </div>
+        <div
+            class="flex flex-col bg-white dark:bg-gray-900 mx-4 rounded-xl border border-gray-100 dark:border-gray-800 mb-6 opacity-75">
+            <div class="flex gap-4 p-4 justify-between">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="text-gray-400 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 shrink-0 size-12">
+                        <span class="material-symbols-outlined">history</span>
+                    </div>
+                    <div class="flex flex-1 flex-col justify-center">
+                        <p class="text-[#111318] dark:text-white text-base font-bold leading-normal">Inducción Básica de
+                            Seguridad</p>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-normal leading-normal">ID: BS-00122 •
+                            Emitido: 05/05/2021</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="flex h-2 w-2 rounded-full bg-red-500"></span>
+                            <p class="text-red-500 text-xs font-medium uppercase">VENCIDO 05/2023</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="shrink-0">
+                    <button
+                        class="flex min-w-[40px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-background-light dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700">
+                        <span class="material-symbols-outlined text-lg">lock</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="fixed bottom-6 right-6">
+            <button
+                class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-2xl elevation-4">
+                <span class="material-symbols-outlined text-3xl">add</span>
+            </button>
+        </div>
+        <div class="h-20"></div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,156 @@
+<!-- Registro de Usuario -->
+<!DOCTYPE html>
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Registro de Usuario - Plataforma de Capacitación</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4",
+                        "accent-orange": "#f97316",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen">
+    <div
+        class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+        <div
+            class="flex items-center bg-white dark:bg-[#1c222d] p-4 pb-2 justify-between border-b border-[#dbdfe6] dark:border-[#2d3648]">
+            <div class="text-[#111318] dark:text-white flex size-12 shrink-0 items-center justify-center cursor-pointer"
+                data-icon="ArrowLeft">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </div>
+            <h2
+                class="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">
+                Registro</h2>
+        </div>
+        <main class="flex-1 flex flex-col items-center justify-start py-8 px-4">
+            <div class="w-full max-w-[480px]">
+                <h1
+                    class="text-[#111318] dark:text-white tracking-light text-[32px] font-bold leading-tight text-center pb-3 pt-6">
+                    Únete a tu Equipo</h1>
+                <p class="text-[#616f89] dark:text-gray-400 text-base font-normal leading-normal pb-8 pt-1 text-center">
+                    Crea tu cuenta para acceder a certificaciones y módulos de capacitación.
+                </p>
+                <div
+                    class="bg-white dark:bg-[#1c222d] rounded-xl shadow-sm border border-[#dbdfe6] dark:border-[#2d3648] p-6 space-y-2">
+                    <div class="flex flex-col gap-1 py-2">
+                        <label class="flex flex-col flex-1">
+                            <p class="text-[#111318] dark:text-white text-sm font-medium leading-normal pb-2">Nombre
+                                Completo</p>
+                            <input
+                                class="form-input flex w-full rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#2d3648] bg-white dark:bg-[#101622] h-12 placeholder:text-[#616f89] p-[15px] text-base font-normal"
+                                placeholder="ej. Juan Pérez" type="text" />
+                        </label>
+                    </div>
+                    <div class="flex flex-col gap-1 py-2">
+                        <label class="flex flex-col flex-1">
+                            <p class="text-[#111318] dark:text-white text-sm font-medium leading-normal pb-2">ID de
+                                Empleado</p>
+                            <input
+                                class="form-input flex w-full rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#2d3648] bg-white dark:bg-[#101622] h-12 placeholder:text-[#616f89] p-[15px] text-base font-normal"
+                                placeholder="ej. EMP-10293" type="text" />
+                        </label>
+                    </div>
+                    <div class="flex flex-col gap-1 py-2">
+                        <label class="flex flex-col flex-1">
+                            <p class="text-[#111318] dark:text-white text-sm font-medium leading-normal pb-2">Correo
+                                Electrónico Laboral</p>
+                            <input
+                                class="form-input flex w-full rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#2d3648] bg-white dark:bg-[#101622] h-12 placeholder:text-[#616f89] p-[15px] text-base font-normal"
+                                placeholder="nombre@empresa.com" type="email" />
+                        </label>
+                    </div>
+                    <div class="flex flex-col gap-1 py-2">
+                        <label class="flex flex-col flex-1">
+                            <p class="text-[#111318] dark:text-white text-sm font-medium leading-normal pb-2">Contraseña
+                            </p>
+                            <div class="relative">
+                                <input
+                                    class="form-input flex w-full rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#2d3648] bg-white dark:bg-[#101622] h-12 placeholder:text-[#616f89] p-[15px] text-base font-normal"
+                                    placeholder="Al menos 8 caracteres" type="password" />
+                                <button class="absolute right-4 top-1/2 -translate-y-1/2 text-[#616f89]">
+                                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                </button>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="flex flex-col gap-1 py-2">
+                        <label class="flex flex-col flex-1">
+                            <div class="flex items-center gap-2 pb-2">
+                                <p class="text-[#111318] dark:text-white text-sm font-medium leading-normal">Código de
+                                    la Empresa</p>
+                                <span class="material-symbols-outlined text-accent-orange text-[16px]">info</span>
+                            </div>
+                            <input
+                                class="form-input flex w-full rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accent-orange/50 border border-[#dbdfe6] dark:border-[#2d3648] bg-white dark:bg-[#101622] h-12 placeholder:text-[#616f89] p-[15px] text-base font-bold tracking-[0.2em] uppercase"
+                                placeholder="XXXXXX" type="text" />
+                        </label>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-normal leading-normal pt-2">
+                            Tu supervisor te proporcionará el código de empresa para vincularte con tu organización.
+                        </p>
+                    </div>
+                    <div class="pt-6">
+                        <button
+                            class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <span>Registrar Cuenta</span>
+                            <span class="material-symbols-outlined">how_to_reg</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="py-8 text-center">
+                    <p class="text-[#616f89] dark:text-gray-400 text-sm">
+                        ¿Ya tienes cuenta?
+                        <a class="text-primary font-bold hover:underline" href="#">Iniciar sesión</a>
+                    </p>
+                </div>
+            </div>
+        </main>
+        <div class="pb-10 px-4 text-center">
+            <p class="text-[10px] text-[#616f89] dark:text-gray-500 uppercase tracking-widest leading-loose">
+                Portal Empresarial Seguro © 2024 Heavy Mach Certs Inc. <br />
+                Al registrarte, aceptas nuestros <a class="underline" href="#">Términos de Servicio</a>.
+            </p>
+        </div>
+    </div>
+
+</body>
+
+</html>

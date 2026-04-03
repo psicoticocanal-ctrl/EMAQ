@@ -1,0 +1,245 @@
+<!-- Editor de Cursos Admin (Course Editor) -->
+<!DOCTYPE html>
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Editor de Cursos Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f49bd",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .ios-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111318] dark:text-white">
+    <header
+        class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 ios-blur border-b border-[#dbdfe6] dark:border-gray-800">
+        <div class="flex items-center p-4 justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[#111318] dark:text-white">arrow_back_ios</span>
+                <h2 class="text-lg font-bold leading-tight tracking-tight">Editar Curso</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="text-primary text-sm font-bold">Guardar</button>
+                <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">Publicar</button>
+            </div>
+        </div>
+    </header>
+    <main class="flex flex-col pb-32">
+        <div class="bg-white dark:bg-background-dark border-b border-[#dbdfe6] dark:border-gray-800">
+            <div class="flex px-4 gap-8">
+                <a class="flex flex-col items-center justify-center border-b-[3px] border-primary text-primary pb-[13px] pt-4"
+                    href="#">
+                    <p class="text-sm font-bold">General</p>
+                </a>
+                <a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-[#616f89] pb-[13px] pt-4"
+                    href="#">
+                    <p class="text-sm font-bold">Estructura</p>
+                </a>
+                <a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-[#616f89] pb-[13px] pt-4"
+                    href="#">
+                    <p class="text-sm font-bold">Configuración</p>
+                </a>
+            </div>
+        </div>
+        <section class="mt-4">
+            <h2 class="text-[#111318] dark:text-white text-[22px] font-bold px-4 pb-3">Detalles del Curso</h2>
+            <div class="flex flex-col gap-4 px-4">
+                <label class="flex flex-col w-full">
+                    <p class="text-[#111318] dark:text-gray-300 text-sm font-medium pb-2">Título del Curso</p>
+                    <input
+                        class="form-input flex w-full rounded-lg text-[#111318] border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 h-12 px-4 text-base focus:ring-1 focus:ring-primary focus:border-primary"
+                        value="Seguridad y Operación de Excavadoras" />
+                </label>
+                <label class="flex flex-col w-full">
+                    <p class="text-[#111318] dark:text-gray-300 text-sm font-medium pb-2">Descripción</p>
+                    <textarea
+                        class="form-input flex w-full rounded-lg text-[#111318] border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 min-h-24 p-4 text-base focus:ring-1 focus:ring-primary focus:border-primary">Protocolos de seguridad avanzados para operaciones con excavadoras hidráulicas pesadas en zonas de construcción.</textarea>
+                </label>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="flex flex-col">
+                        <p class="text-[#111318] dark:text-gray-300 text-sm font-medium pb-2">Categoría</p>
+                        <select
+                            class="form-select rounded-lg border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 h-12 px-4 text-sm">
+                            <option>Maquinaria Pesada</option>
+                            <option>Seguridad</option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col">
+                        <p class="text-[#111318] dark:text-gray-300 text-sm font-medium pb-2">Rol Laboral</p>
+                        <select
+                            class="form-select rounded-lg border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 h-12 px-4 text-sm">
+                            <option>Operador</option>
+                            <option>Supervisor</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </section>
+        <hr class="my-8 border-[#dbdfe6] dark:border-gray-800 mx-4" />
+        <section>
+            <div class="flex items-center justify-between px-4 pb-4">
+                <h2 class="text-[#111318] dark:text-white text-xl font-bold">Constructor de Módulos</h2>
+                <button class="flex items-center gap-1 text-primary text-sm font-bold">
+                    <span class="material-symbols-outlined text-lg">add_circle</span>
+                    Añadir Módulo
+                </button>
+            </div>
+            <div class="flex flex-col gap-3 px-4">
+                <div
+                    class="flex flex-col border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm">
+                    <div class="flex items-center p-4 gap-3">
+                        <span class="material-symbols-outlined text-gray-400 cursor-grab">drag_indicator</span>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">MÓDULO 1</p>
+                            <h3 class="font-bold text-[#111318] dark:text-white">Pre-chequeos de Seguridad</h3>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">expand_less</span>
+                    </div>
+                    <div
+                        class="bg-gray-50 dark:bg-gray-800/50 p-4 border-t border-[#dbdfe6] dark:border-gray-700 flex flex-col gap-4">
+                        <div
+                            class="bg-white dark:bg-gray-900 p-3 rounded-lg border border-[#dbdfe6] dark:border-gray-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary">play_circle</span>
+                                <span class="text-sm font-medium">Video: Inspección Diaria</span>
+                            </div>
+                            <span class="material-symbols-outlined text-gray-400 text-sm">edit</span>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-gray-900 p-3 rounded-lg border border-[#dbdfe6] dark:border-gray-700 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
+                                <span class="text-sm font-medium">Lista de Verificación de Seguridad.pdf</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] text-gray-400">2.4MB</span>
+                                <span class="material-symbols-outlined text-gray-400 text-sm">close</span>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-primary/5 dark:bg-primary/10 border-2 border-dashed border-primary/30 rounded-lg p-4">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-3xl">fact_check</span>
+                                <p class="text-sm font-bold text-primary">Añadir Cuestionario de Lección</p>
+                                <p class="text-xs text-[#616f89] dark:text-gray-400">Verificar conocimientos del
+                                    operador</p>
+                                <button
+                                    class="mt-2 bg-primary text-white text-xs px-4 py-2 rounded-full font-bold">Crear
+                                    Cuestionario</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="flex items-center p-4 border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow-sm gap-3">
+                    <span class="material-symbols-outlined text-gray-400 cursor-grab">drag_indicator</span>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">MÓDULO 2</p>
+                        <h3 class="font-bold text-[#111318] dark:text-white">Controles Hidráulicos</h3>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">expand_more</span>
+                </div>
+            </div>
+        </section>
+        <section class="mt-8 px-4">
+            <div class="bg-white dark:bg-gray-900 border border-[#dbdfe6] dark:border-gray-700 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">quiz</span>
+                        Test: Conceptos Básicos
+                    </h3>
+                    <span class="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded">3 Preguntas</span>
+                </div>
+                <div class="space-y-4">
+                    <div
+                        class="p-3 border border-gray-100 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-800/30">
+                        <p class="text-xs text-gray-500 mb-1">Pregunta 1</p>
+                        <p class="text-sm font-medium mb-3">¿Cuándo se debe activar la palanca de bloqueo de seguridad?
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+                                <span>Antes de salir de la cabina</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span
+                                    class="material-symbols-outlined text-gray-300 text-sm">radio_button_unchecked</span>
+                                <span>Solo cuando se estacione en una pendiente</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full py-3 border-2 border-dashed border-[#dbdfe6] dark:border-gray-700 rounded-lg text-sm font-bold text-[#616f89] flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">add</span>
+                        Nueva Pregunta
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div
+        class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-background-dark/95 ios-blur border-t border-[#dbdfe6] dark:border-gray-800 p-4 safe-area-inset-bottom">
+        <div class="flex items-center justify-around">
+            <div class="flex flex-col items-center gap-1 opacity-50">
+                <span class="material-symbols-outlined">analytics</span>
+                <span class="text-[10px] font-bold">Analítica</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-primary">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span class="text-[10px] font-bold">Editor</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 opacity-50">
+                <span class="material-symbols-outlined">groups</span>
+                <span class="text-[10px] font-bold">Estudiantes</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 opacity-50">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="text-[10px] font-bold">Ajustes</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

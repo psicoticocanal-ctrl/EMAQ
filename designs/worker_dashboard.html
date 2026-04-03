@@ -1,0 +1,233 @@
+<!-- Panel de Control del Trabajador (Worker Dashboard) -->
+<!DOCTYPE html>
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Panel de Control del Trabajador</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4", // Navy blue accent
+                        "industrial-orange": "#f97316", // Professional industrial orange
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark min-h-screen">
+    <div
+        class="relative flex h-auto min-h-screen w-full flex-col max-w-[430px] mx-auto bg-white dark:bg-background-dark shadow-xl overflow-x-hidden">
+        <div
+            class="flex items-center bg-white dark:bg-background-dark p-4 pb-2 justify-between sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex size-10 shrink-0 items-center">
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8 border border-gray-200"
+                    data-alt="Logotipo de la empresa"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCQemOVOBpm6ORVwY7UAXPkk1yL31kZhRJjGVSjbfRHb6wwFLkDbBcnUOarbeSsRWeUnqzRUkfMR6NKMBrQHHL8PJORZHWLC_2J2XQ2k6G2dk4ec1TzLc2ohypDSBtA_K22rskgckgIg-88riv7IFeD6mQqtQ0DyQ36dL0EcZwZPJBRLT9bUAQDOPycxrPoZlry_ZJ82GhEij9HX_9cddDfG-ptX-b2a_Qep2PBnvx0TmEEg081DmEqpH5ux8nrEqc5v2LnYiu4Y4_z");'>
+                </div>
+            </div>
+            <h2 class="text-[#111318] dark:text-white text-base font-bold leading-tight tracking-tight flex-1 px-2">
+                Portal del Trabajador</h2>
+            <div class="flex w-12 items-center justify-end gap-2">
+                <button
+                    class="flex cursor-pointer items-center justify-center rounded-lg h-10 w-10 bg-transparent text-[#111318] dark:text-white">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+            </div>
+        </div>
+        <div class="flex p-4 @container bg-white dark:bg-background-dark">
+            <div class="flex w-full flex-col gap-4">
+                <div class="flex gap-4 items-center">
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-xl min-h-20 w-20 border-2 border-primary/10 shadow-sm"
+                        data-alt="Retrato profesional"
+                        style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBbb82uOzWpd9e1z3T74OwUqmIdqmGG_u6rKI3V2XLfOIXu3bTm2cw1g_rU66YLAUYIt0qlqQVNrC3CTiFfCr54kQC-FI1OLZySc8IZ4Nazz4pbvyUzMHgiD0pVTlbRW1ym_0m_iXkBScMGF4HCMAge8Hq59LyB8IFecrBHNg9RvinxlRjIu3aK39jwC0xp_6ctgsUnYS8esbLrs1s2-ylZLjynPgoZpib6Hc80HdJRc6HgzgzPcU95mZvYxfR0rWKL8ziL1kgPz64a");'>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <p class="text-[#111318] dark:text-white text-xl font-bold leading-tight tracking-tight">John
+                            Doe</p>
+                        <p class="text-primary font-semibold text-sm">Industrial Corp.</p>
+                        <p class="text-[#616f89] dark:text-gray-400 text-sm font-medium">Operador Senior de Excavadoras
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="px-4 py-2">
+            <div class="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/10">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-[#111318] dark:text-white text-lg font-bold leading-tight">Progreso del Plan de
+                            Aprendizaje</h2>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-medium uppercase tracking-wider mt-1">
+                            RUTA DE SEGURIDAD INDUSTRIAL</p>
+                    </div>
+                    <span
+                        class="bg-industrial-orange text-white text-[10px] font-bold px-2 py-1 rounded uppercase">PRIORIDAD
+                        ALTA</span>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-6 justify-between items-end">
+                        <p class="text-[#111318] dark:text-white text-base font-semibold leading-normal">Seguridad de
+                            Equipos Pesados L2</p>
+                        <p class="text-industrial-orange text-lg font-bold leading-normal">75%</p>
+                    </div>
+                    <div class="rounded-full bg-gray-200 dark:bg-gray-700 h-3 overflow-hidden">
+                        <div class="h-full rounded-full bg-industrial-orange" style="width: 75%;"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs font-normal">12 de 16 módulos completados
+                        </p>
+                        <p class="text-primary text-xs font-bold flex items-center gap-1">Continuar <span
+                                class="material-symbols-outlined text-xs">arrow_forward</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between px-4 pt-6 pb-2">
+                <h2 class="text-[#111318] dark:text-white text-lg font-bold leading-tight">Cursos Asignados</h2>
+                <button class="text-primary text-xs font-bold uppercase tracking-wider">VER TODO</button>
+            </div>
+            <div class="px-4 grid grid-cols-1 gap-3 pb-6">
+                <div
+                    class="flex flex-col gap-3 p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div class="bg-primary/10 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary">settings_input_component</span>
+                        </div>
+                        <span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded">EN CURSO</span>
+                    </div>
+                    <div>
+                        <h3 class="text-[#111318] dark:text-white font-bold text-sm">Mantenimiento de Sistemas
+                            Hidráulicos</h3>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs mt-1">Vence: 24 Oct, 2023 • 45 min restantes
+                        </p>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col gap-3 p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-gray-400">
+                            <span class="material-symbols-outlined">nightlight</span>
+                        </div>
+                        <span
+                            class="bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-bold px-2 py-1 rounded">PENDIENTE</span>
+                    </div>
+                    <div>
+                        <h3 class="text-[#111318] dark:text-white font-bold text-sm">Protocolo de Seguridad del Turno
+                            Noche</h3>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs mt-1">Inicia: 30 Oct, 2023 • 2 horas</p>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col gap-3 p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg text-green-600">
+                            <span class="material-symbols-outlined">architecture</span>
+                        </div>
+                        <span
+                            class="bg-green-100 dark:bg-green-900/30 text-green-600 text-[10px] font-bold px-2 py-1 rounded uppercase">COMPLETADO</span>
+                    </div>
+                    <div>
+                        <h3 class="text-[#111318] dark:text-white font-bold text-sm">Topografía Básica del Sitio</h3>
+                        <p class="text-[#616f89] dark:text-gray-400 text-xs mt-1">Completado el: 12 Oct, 2023</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-900/50 py-6 px-4 mb-20">
+            <h2 class="text-[#111318] dark:text-white text-lg font-bold leading-tight mb-4">Certificaciones Obtenidas
+            </h2>
+            <div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                <div
+                    class="min-w-[140px] flex flex-col items-center text-center gap-2 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                    <div class="w-12 h-12 bg-industrial-orange/20 rounded-full flex items-center justify-center mb-1">
+                        <span class="material-symbols-outlined text-industrial-orange text-3xl">verified</span>
+                    </div>
+                    <p class="text-[#111318] dark:text-white text-xs font-bold leading-tight">Especialista en Excavación
+                        Nivel 1</p>
+                    <p class="text-[#616f89] dark:text-gray-400 text-[10px]">Oct 2023</p>
+                </div>
+                <div
+                    class="min-w-[140px] flex flex-col items-center text-center gap-2 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                    <div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-1">
+                        <span class="material-symbols-outlined text-primary text-3xl">gavel</span>
+                    </div>
+                    <p class="text-[#111318] dark:text-white text-xs font-bold leading-tight">Certificado de Seguridad
+                        OSHA</p>
+                    <p class="text-[#616f89] dark:text-gray-400 text-[10px]">Ene 2024</p>
+                </div>
+                <div
+                    class="min-w-[140px] flex flex-col items-center text-center gap-2 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                    <div
+                        class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-1">
+                        <span class="material-symbols-outlined text-gray-400 text-3xl">construction</span>
+                    </div>
+                    <p class="text-[#111318] dark:text-white text-xs font-bold leading-tight">Fundamentos de Prep. del
+                        Sitio</p>
+                    <p class="text-[#616f89] dark:text-gray-400 text-[10px]">Ago 2023</p>
+                </div>
+            </div>
+        </div>
+        <div
+            class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-3 flex justify-between items-center z-50">
+            <button class="flex flex-col items-center gap-1 text-primary">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="text-[10px] font-bold">Inicio</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 text-[#616f89] dark:text-gray-400">
+                <span class="material-symbols-outlined">menu_book</span>
+                <span class="text-[10px] font-medium">Cursos</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 text-[#616f89] dark:text-gray-400">
+                <span class="material-symbols-outlined">workspace_premium</span>
+                <span class="text-[10px] font-medium">Certificados</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 text-[#616f89] dark:text-gray-400">
+                <span class="material-symbols-outlined">person</span>
+                <span class="text-[10px] font-medium">Perfil</span>
+            </button>
+        </div>
+    </div>
+
+</body>
+
+</html>
