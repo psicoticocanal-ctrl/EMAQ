@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Home from './pages/Home';
+import MissionVision from './pages/MissionVision';
+import WhoWeAre from './pages/WhoWeAre';
 import Dashboard from './pages/Dashboard';
 
 // Worker routes
@@ -25,6 +27,8 @@ function App() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<Home />} />
+          <Route path="/mision-vision" element={<MissionVision />} />
+          <Route path="/quienes-somos" element={<WhoWeAre />} />
 
           {/* Worker */}
           <Route path="/login" element={<WorkerLogin />} />

@@ -3,23 +3,25 @@ import { Link } from 'react-router-dom';
 
 const Navbar = () => {
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#000000]/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     <div className="flex items-center gap-3">
                         <Link to="/" className="flex items-center">
                             <img 
-                                src="/src/assets/emaq-logo.png" 
+                                src="/imagenes/LOGO EMAQ.jpg.jpeg" 
                                 alt="EMAQ Logo" 
-                                className="h-16 w-auto"
+                                className="h-14 w-auto object-contain"
                             />
                         </Link>
                     </div>
 
                     <div className="hidden md:flex items-center gap-8">
-                        <Link to="/features" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-[#f3b012] transition-colors">Características</Link>
-                        <Link to="/courses" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-[#f3b012] transition-colors">Cursos</Link>
-                        <Link to="/verification" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-[#f3b012] transition-colors">Verificar Certificado</Link>
+                        <Link to="/" className="text-sm font-semibold text-black hover:text-[#f3b012] transition-colors">Inicio</Link>
+                        <Link to="/quienes-somos" className="text-sm font-semibold text-black hover:text-[#f3b012] transition-colors">¿Quiénes somos?</Link>
+                        <Link to="/mision-vision" className="text-sm font-semibold text-black hover:text-[#f3b012] transition-colors">Misión y Visión</Link>
+                        <Link to="/courses" className="text-sm font-semibold text-black hover:text-[#f3b012] transition-colors">Cursos</Link>
+                        <Link to="/verification" className="text-sm font-semibold text-black hover:text-[#f3b012] transition-colors">Verificar Certificado</Link>
                     </div>
 
                     <div className="flex items-center gap-4">
