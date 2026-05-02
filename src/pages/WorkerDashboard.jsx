@@ -672,8 +672,11 @@ const WorkerDashboard = () => {
     const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
 
     const getActiveTab = () => {
-        const path = location.pathname.split('/').pop();
-        if (['cursos', 'empresas', 'certificados', 'perfil'].includes(path)) return path;
+        const path = location.pathname;
+        if (path.includes('/cursos')) return 'cursos';
+        if (path.includes('/empresas')) return 'empresas';
+        if (path.includes('/certificados')) return 'certificados';
+        if (path.includes('/perfil')) return 'perfil';
         return 'inicio';
     };
     const activeTab = getActiveTab();

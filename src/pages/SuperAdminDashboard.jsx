@@ -17,8 +17,10 @@ const SuperAdminDashboard = () => {
 
     // Sync tab with URL
     const getActiveTab = () => {
-        const path = location.pathname.split('/').pop();
-        if (['equipo', 'usuarios', 'certificados'].includes(path)) return path;
+        const path = location.pathname;
+        if (path.includes('/equipo')) return 'equipo';
+        if (path.includes('/usuarios')) return 'usuarios';
+        if (path.includes('/certificados')) return 'certificados';
         return 'general';
     };
     const tab = getActiveTab();
