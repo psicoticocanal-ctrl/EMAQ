@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import CourseManager from './admin/CourseManager';
 import CertificateGenerator from './admin/CertificateGenerator';
 import WorkerEnrollments from './admin/WorkerEnrollments';
+import CourseEditor from './admin/CourseEditor';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -422,6 +423,7 @@ const AdminDashboard = () => {
                             <Route path="equipo" element={<WorkerEnrollments />} />
 
                             <Route path="cursos" element={<CourseManager onNavigate={(id) => navigate(`/dashboard/${id}`)} />} />
+                            <Route path=":courseId" element={<CourseEditor />} />
 
                             <Route path="reportes" element={
                                 <section className="p-4 lg:p-6 text-center py-20">

@@ -17,8 +17,9 @@ const Spinner = () => (
 const Dashboard = () => {
     const { profile, profileLoading } = useAuth();
 
-    // Wait for profile to load before deciding which dashboard to show
-    if (profileLoading) return <Spinner />;
+    // Only show spinner if we are loading AND we don't have a profile yet.
+    // If we already have a profile, we don't want to unmount everything just to refresh it.
+    if (profileLoading && !profile) return <Spinner />;
 
     switch (profile?.role) {
         case 'super_admin':

@@ -24,16 +24,26 @@ const ContentDisplay = ({ module, courseTitle }) => {
         );
     }
 
-    if (module.content_type === 'pdf' && module.content_url) {
+    if ((module.content_type === 'pdf' || module.content_type === 'word' || module.content_type === 'excel') && module.content_url) {
+        const isPdf = module.content_type === 'pdf';
+        const isExcel = module.content_type === 'excel';
+        const icon = isPdf ? 'picture_as_pdf' : isExcel ? 'table_view' : 'description';
+        const iconColor = isPdf ? 'text-red-500' : isExcel ? 'text-green-600' : 'text-blue-600';
+        const label = isPdf ? 'Documento PDF' : isExcel ? 'Archivo Excel' : 'Documento Word';
+
         return (
             <div className="bg-slate-100 aspect-video relative flex flex-col items-center justify-center p-6 border-b border-gray-200">
-                <span className="material-symbols-outlined text-6xl text-red-500 mb-4">picture_as_pdf</span>
-                <p className="text-gray-900 font-bold mb-2">Manual Técnico: {module.title}</p>
+                <div className={`w-20 h-20 rounded-3xl bg-white shadow-sm flex items-center justify-center mb-4 border-2 border-gray-50`}>
+                    <span className={`material-symbols-outlined text-5xl ${iconColor}`}>{icon}</span>
+                </div>
+                <p className="text-gray-900 font-black mb-1">{label}</p>
+                <p className="text-gray-400 text-xs font-bold mb-5 truncate max-w-xs">{module.title}</p>
                 <button
                     onClick={() => openInNewTab(module.content_url)}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors"
+                    className="bg-blue-600 text-white px-8 py-3 rounded-2xl text-sm font-black shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
                 >
-                    Ver PDF en nueva pestaña
+                    <span className="material-symbols-outlined text-base">download</span>
+                    Ver o Descargar Archivo
                 </button>
             </div>
         );
@@ -362,6 +372,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
             }
         } catch (e) {
             console.error(e);
+            alert('Error al marcar módulo: ' + (e.message || 'Sin permisos'));
         }
     };
 

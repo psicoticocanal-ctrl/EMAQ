@@ -122,11 +122,12 @@ const WorkerEnrollments = () => {
             if (workerIds.length === 0) { setEnrollments([]); setLoading(false); return; }
 
             // Parallel fetch of activity data
-            const [modulesRes, progressRes, certsRes, examsRes] = await Promise.all([
+            const [modulesRes, progressRes, certsRes, examsRes, assignmentsRes] = await Promise.all([
                 supabase.from('modules').select('id, course_id').in('course_id', courseIds),
                 supabase.from('progress').select('user_id, module_id, status, completed_at').in('user_id', workerIds),
                 supabase.from('certificates').select('id, user_id, course_id, cert_code, issue_date, expiry_date, verification_code, download_count, max_downloads, template_id').in('course_id', courseIds).in('user_id', workerIds),
-                supabase.from('exam_attempts').select('user_id, course_id, score, passed, completed_at').in('course_id', courseIds).in('user_id', workerIds)
+                supabase.from('exam_attempts').select('user_id, course_id, score, passed, completed_at').in('course_id', courseIds).in('user_id', workerIds),
+                supabase.from('course_assignments').select('user_id, course_id, created_at').in('course_id', courseIds)
             ]);
 
             const modules = modulesRes.data || [];
@@ -134,6 +135,7 @@ const WorkerEnrollments = () => {
             const certs = certsRes.data || [];
             const exams = examsRes.data || [];
             const templates = templatesRes.data || [];
+            const courseAssignments = assignmentsRes.data || [];
 
             // ── PRE-INDEXING (The Secret Sauce for Speed) ──
             const modulesByCourse = {};
@@ -163,40 +165,52 @@ const WorkerEnrollments = () => {
             const templatesByCourse = {};
             templates.forEach(t => templatesByCourse[t.course_id] = t);
 
-            // ── Build enrollments list with O(1) lookups ──
+            // ── Build enrollments list ──
             const rows = [];
-            workers.forEach(worker => {
-                let hasActivity = false;
+            
+            // Map course assignments first (the source of truth for who is in which course)
+            courseAssignments.forEach(assignment => {
+                const worker = workersMap.get(assignment.user_id);
+                const course = courses.find(c => c.id === assignment.course_id);
+                if (!worker || !course) return;
 
-                courses.forEach(course => {
-                    const courseMods = modulesByCourse[course.id] || [];
-                    if (courseMods.length === 0) return;
+                const courseMods = modulesByCourse[course.id] || [];
+                const workerProgress = courseMods
+                    .map(mid => progressByWorkerAndModule[`${worker.id}_${mid}`])
+                    .filter(Boolean);
+                
+                const cert = certsByWorkerAndCourse[`${worker.id}_${course.id}`];
+                const examsForThis = examsByWorkerAndCourse[`${worker.id}_${course.id}`] || [];
+                const examPassed = examsForThis.some(e => e.passed);
 
-                    const workerProgress = courseMods
-                        .map(mid => progressByWorkerAndModule[`${worker.id}_${mid}`])
-                        .filter(Boolean);
-                    
-                    const cert = certsByWorkerAndCourse[`${worker.id}_${course.id}`];
-                    const examsForThis = examsByWorkerAndCourse[`${worker.id}_${course.id}`] || [];
-                    const examPassed = examsForThis.some(e => e.passed);
+                const completedCount = workerProgress.filter(p => p.status === 'completed').length;
+                const progressPct = pct(completedCount, courseMods.length);
+                const template = templatesByCourse[course.id] || null;
+                const certStatus = cert 
+                    ? (cert.expiry_date && new Date(cert.expiry_date) < new Date() ? 'expired' : 'certified')
+                    : examPassed ? 'passed_no_cert' : 'in_progress';
 
-                    if (workerProgress.length > 0 || cert || examsForThis.length > 0) {
-                        hasActivity = true;
-                        const completedCount = workerProgress.filter(p => p.status === 'completed').length;
-                        const progressPct = pct(completedCount, courseMods.length);
-                        const template = templatesByCourse[course.id] || null;
-                        const certStatus = cert 
-                            ? (cert.expiry_date && new Date(cert.expiry_date) < new Date() ? 'expired' : 'certified')
-                            : examPassed ? 'passed_no_cert' : 'in_progress';
-
-                        rows.push({ worker, course, progressPct, completed: completedCount, totalModules: courseMods.length, cert, certStatus, examPassed, template });
-                    }
+                rows.push({ 
+                    worker, 
+                    course, 
+                    progressPct, 
+                    completed: completedCount, 
+                    totalModules: courseMods.length, 
+                    cert, 
+                    certStatus, 
+                    examPassed, 
+                    template,
+                    enrolledAt: assignment.created_at
                 });
+            });
 
-                if (!hasActivity) {
+            // Add workers with NO assignments yet (but linked to company)
+            workers.forEach(worker => {
+                const isAssigned = courseAssignments.some(a => a.user_id === worker.id);
+                if (!isAssigned) {
                     rows.push({
                         worker,
-                        course: { title: '(Sin curso activo)', id: 'none' },
+                        course: { title: '(Sin curso asignado)', id: 'none' },
                         progressPct: 0, completed: 0, totalModules: 0,
                         cert: null, certStatus: 'in_progress', examPassed: false, template: null
                     });

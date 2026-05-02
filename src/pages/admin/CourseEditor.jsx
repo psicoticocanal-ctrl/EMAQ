@@ -14,34 +14,47 @@ const Field = ({ label, children, hint }) => (
 
 /* ─── File type metadata ─── */
 const FILE_TYPES = {
-    pdf: { label: 'PDF', icon: 'picture_as_pdf', color: 'text-red-500', accept: 'application/pdf', ext: 'pdf' },
-    word: { label: 'Word', icon: 'description', color: 'text-blue-600', accept: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', ext: 'doc,docx' },
-    video: { label: 'Video', icon: 'play_circle', color: 'text-purple-600', accept: 'video/mp4,video/webm', ext: 'mp4,webm' },
-    text: { label: 'Texto', icon: 'text_snippet', color: 'text-gray-500', accept: null, ext: null },
+    pdf: { label: 'PDF', icon: 'picture_as_pdf', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100', accept: 'application/pdf', ext: 'pdf' },
+    word: { label: 'Word', icon: 'description', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', accept: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', ext: 'doc,docx' },
+    excel: { label: 'Excel', icon: 'table_view', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-100', accept: '.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ext: 'xls,xlsx,csv' },
+    video: { label: 'Video', icon: 'play_circle', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', accept: 'video/mp4,video/webm', ext: 'mp4,webm' },
+    text: { label: 'Texto', icon: 'text_snippet', color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-100', accept: null, ext: null },
 };
 
 /* ─── Content File Uploader ─── */
 const ContentUploader = ({ contentType, contentUrl, contentText, onChangeType, onChangeUrl, onChangeText }) => {
     const inputRef = useRef();
     const [uploading, setUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
 
-    const meta = FILE_TYPES[contentType] || FILE_TYPES.pdf;
+    // Ensure we have a valid meta object
+    const currentType = contentType || 'pdf';
+    const meta = FILE_TYPES[currentType] || FILE_TYPES.pdf;
     const fileName = contentUrl ? contentUrl.split('/').pop().split('?')[0] : null;
 
     const handleFile = async (file) => {
         if (!file) return;
         const MAX = 50 * 1024 * 1024;
         if (file.size > MAX) { alert('El archivo no puede superar 50MB.'); return; }
+        
+        // Auto-detect type based on extension
+        const ext = file.name.split('.').pop().toLowerCase();
+        let detectedType = contentType;
+        if (ext === 'pdf') detectedType = 'pdf';
+        else if (['doc', 'docx'].includes(ext)) detectedType = 'word';
+        else if (['xls', 'xlsx', 'csv'].includes(ext)) detectedType = 'excel';
+        else if (['mp4', 'webm', 'mov'].includes(ext)) detectedType = 'video';
+        
+        if (detectedType !== contentType) {
+            onChangeType(detectedType);
+        }
+
         setUploading(true);
-        setProgress(0);
         try {
-            const ext = file.name.split('.').pop();
             const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             const path = `modules/${Date.now()}_${safeName}`;
             const { error: upErr } = await supabase.storage
                 .from('module-content')
-                .upload(path, file, { upsert: true, contentType: file.type });
+                .upload(path, file, { upsert: true });
             if (upErr) throw upErr;
             const { data } = supabase.storage.from('module-content').getPublicUrl(path);
             onChangeUrl(data.publicUrl);
@@ -53,9 +66,9 @@ const ContentUploader = ({ contentType, contentUrl, contentText, onChangeType, o
         }
     };
 
-    const handleRemove = async () => {
+    const handleRemove = async (e) => {
+        e.stopPropagation();
         if (!contentUrl) return;
-        // Extract path from URL for deletion attempt (non-blocking)
         try {
             const parts = contentUrl.split('/module-content/');
             if (parts[1]) await supabase.storage.from('module-content').remove([parts[1]]);
@@ -63,80 +76,102 @@ const ContentUploader = ({ contentType, contentUrl, contentText, onChangeType, o
         onChangeUrl('');
     };
 
+    const handleTypeChange = (key) => {
+        console.log("DEBUG: Cambiando tipo a ->", key);
+        // Actualizamos primero el tipo
+        onChangeType(key);
+        // Si el tipo cambia, forzamos la limpieza de los campos de contenido
+        if (key !== currentType) {
+            onChangeUrl('');
+            onChangeText('');
+        }
+    };
+
     return (
-        <div className="flex flex-col gap-3">
-            {/* Type selector */}
-            <div className="flex gap-2 flex-wrap">
-                {Object.entries(FILE_TYPES).map(([key, t]) => (
-                    <button
-                        key={key}
-                        type="button"
-                        onClick={() => { onChangeType(key); if (key !== contentType) onChangeUrl(''); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${contentType === key ? 'border-[#f3b012] bg-[#f3b012]/10 text-[#b88000]' : 'border-gray-200 text-gray-400 hover:border-gray-300'
-                            }`}
-                    >
-                        <span className={`material-symbols-outlined text-sm ${contentType === key ? 'text-[#b88000]' : t.color}`}>{t.icon}</span>
-                        {t.label}
-                    </button>
-                ))}
+        <div className="flex flex-col gap-5 p-5 bg-gray-50/50 rounded-3xl border border-gray-100">
+            {/* Step 1: Type selection */}
+            <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. Tipo de Contenido</label>
+                <select 
+                    value={currentType} 
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        console.log("Seleccionado:", val);
+                        handleTypeChange(val);
+                    }}
+                    className="w-full bg-white border-2 border-gray-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-900 outline-none focus:border-[#f3b012] transition-all shadow-md cursor-pointer block"
+                    style={{ WebkitAppearance: 'menulist' }}
+                >
+                    {Object.entries(FILE_TYPES).map(([key, t]) => (
+                        <option key={key} value={key}>{t.label}</option>
+                    ))}
+                </select>
             </div>
 
-            {/* Upload zone or text area */}
-            {contentType === 'text' ? (
-                <textarea
-                    className={`${inputCls} min-h-[120px] resize-none`}
-                    placeholder="Escribe el contenido de texto, instrucciones o apuntes de la lección..."
-                    value={contentText || ''}
-                    onChange={e => onChangeText(e.target.value)}
-                />
-            ) : contentUrl ? (
-                /* Uploaded file preview */
-                <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 border-${contentType === 'pdf' ? 'red' : contentType === 'word' ? 'blue' : 'purple'
-                    }-100 bg-${contentType === 'pdf' ? 'red' : contentType === 'word' ? 'blue' : 'purple'
-                    }-50`}>
-                    <span className={`material-symbols-outlined text-3xl ${meta.color}`}>{meta.icon}</span>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{decodeURIComponent(fileName || 'Archivo subido')}</p>
-                        <a href={contentUrl} target="_blank" rel="noreferrer"
-                            className="text-xs text-blue-600 hover:underline font-medium">Ver / Descargar</a>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                        <button type="button" onClick={() => inputRef.current?.click()}
-                            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-[#b88000] hover:border-[#f3b012] transition-colors" title="Cambiar archivo">
-                            <span className="material-symbols-outlined text-lg">swap_horiz</span>
-                        </button>
-                        <button type="button" onClick={handleRemove}
-                            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 transition-colors" title="Eliminar">
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                /* Drop zone */
-                <div
-                    onClick={() => !uploading && inputRef.current?.click()}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-                    className="border-2 border-dashed border-gray-200 hover:border-[#f3b012] rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors group"
-                >
-                    {uploading ? (
-                        <>
-                            <div className="w-10 h-10 border-4 border-[#f3b012] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-gray-400">Subiendo archivo...</p>
-                        </>
-                    ) : (
-                        <>
-                            <span className={`material-symbols-outlined text-5xl text-gray-200 group-hover:${meta.color} transition-colors`}>{meta.icon}</span>
-                            <div className="text-center">
-                                <p className="text-sm font-bold text-gray-500 group-hover:text-gray-700">
-                                    Haz clic o arrastra un archivo {meta.label}
-                                </p>
-                                <p className="text-xs text-gray-300 mt-1">Máximo 50MB</p>
+            {/* Step 2: Content Area (Only if type is selected) */}
+            {contentType && (
+                <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. Cargar {meta.label}</p>
+                    <div className="relative">
+                        {contentType === 'text' ? (
+                            <textarea
+                                className={`${inputCls} min-h-[160px] resize-none border-2 focus:border-[#f3b012] bg-white`}
+                                placeholder="Escribe el contenido de texto, instrucciones o apuntes de la lección..."
+                                value={contentText || ''}
+                                onChange={e => onChangeText(e.target.value)}
+                            />
+                        ) : contentUrl ? (
+                            <div className={`flex items-center gap-4 p-5 rounded-3xl border-2 ${meta.border} ${meta.bg} shadow-sm bg-white`}>
+                                <div className={`w-14 h-14 rounded-2xl ${meta.bg} border-2 ${meta.border} flex items-center justify-center shrink-0`}>
+                                    <span className={`material-symbols-outlined text-3xl ${meta.color}`}>{meta.icon}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-black text-gray-900 truncate">{decodeURIComponent(fileName || 'Archivo subido')}</p>
+                                    <div className="flex gap-3 mt-1">
+                                        <a href={contentUrl} target="_blank" rel="noreferrer"
+                                            className="text-xs text-blue-600 hover:underline font-bold flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">open_in_new</span> Ver archivo
+                                        </a>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                    <button type="button" onClick={() => inputRef.current?.click()}
+                                        className="w-10 h-10 rounded-xl bg-white border-2 border-gray-100 text-gray-500 hover:text-[#b88000] hover:border-[#f3b012] transition-all flex items-center justify-center shadow-sm">
+                                        <span className="material-symbols-outlined text-xl">swap_horiz</span>
+                                    </button>
+                                    <button type="button" onClick={handleRemove}
+                                        className="w-10 h-10 rounded-xl bg-white border-2 border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-200 transition-all flex items-center justify-center shadow-sm">
+                                        <span className="material-symbols-outlined text-xl">delete</span>
+                                    </button>
+                                </div>
                             </div>
-                        </>
-                    )}
+                        ) : (
+                            <div
+                                onClick={() => !uploading && inputRef.current?.click()}
+                                className={`border-2 border-dashed border-gray-200 bg-white hover:border-[#f3b012] hover:bg-[#f3b012]/5 rounded-3xl p-10 flex flex-col items-center gap-4 cursor-pointer transition-all group ${uploading ? 'opacity-50' : ''}`}
+                            >
+                                {uploading ? (
+                                    <>
+                                        <div className="w-10 h-10 border-4 border-[#f3b012] border-t-transparent rounded-full animate-spin" />
+                                        <p className="text-sm font-black text-[#b88000]">Subiendo...</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={`w-16 h-16 rounded-full ${meta.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                            <span className={`material-symbols-outlined text-4xl ${meta.color}`}>{meta.icon}</span>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-black text-gray-700">Seleccionar {meta.label}</p>
+                                            <p className="text-[10px] text-gray-400 mt-1 font-bold uppercase tracking-wider">Máx 50MB</p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
+            
             <input
                 ref={inputRef}
                 type="file"
@@ -370,7 +405,10 @@ const QuizPanel = ({ title, icon, questions, onChange, accentColor = 'blue' }) =
 const ModuleItem = ({ mod, index, onChange, onRemove }) => {
     const [showQuiz, setShowQuiz] = useState(false);
 
-    const updateField = (field, val) => onChange({ ...mod, [field]: val });
+    const updateField = (field, val) => {
+        const updated = { ...mod, [field]: val };
+        onChange(updated);
+    };
 
     return (
         <div className="border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
@@ -519,7 +557,7 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
     const addModule = () => setModules(prev => [...prev, {
         title: '',
         description: '',
-        content_type: 'video',
+        content_type: 'pdf',
         content_url: '',
         content_text: '',
         image_url: '',
@@ -573,7 +611,7 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                     title: m.title || `Módulo ${i + 1}`,
                     description: m.description || null,
                     content_url: m.content_url || null,
-                    content_type: m.content_type || 'video',
+                    content_type: m.content_type || 'pdf',
                     content_text: m.content_text || null,
                     image_url: m.image_url || null,
                     sort_order: i + 1
@@ -581,9 +619,11 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
 
                 let modId = m.id;
                 if (modId) {
-                    await supabase.from('modules').update(modData).eq('id', modId);
+                    const { error: upErr } = await supabase.from('modules').update(modData).eq('id', modId);
+                    if (upErr) throw upErr;
                 } else {
-                    const { data } = await supabase.from('modules').insert(modData).select().single();
+                    const { data, error: insErr } = await supabase.from('modules').insert(modData).select().single();
+                    if (insErr) throw insErr;
                     modId = data?.id;
                 }
 
@@ -597,9 +637,11 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                         passing_score: 70
                     };
                     if (m._evalId) {
-                        await supabase.from('evaluations').update(evalData).eq('id', m._evalId);
+                        const { error: evUpErr } = await supabase.from('evaluations').update(evalData).eq('id', m._evalId);
+                        if (evUpErr) throw evUpErr;
                     } else if ((m.quiz || []).length > 0) {
-                        await supabase.from('evaluations').insert(evalData);
+                        const { error: evInsErr } = await supabase.from('evaluations').insert(evalData);
+                        if (evInsErr) throw evInsErr;
                     }
                 }
             }
@@ -617,9 +659,11 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                     module_id: null
                 };
                 if (existingExam) {
-                    await supabase.from('evaluations').update(examData).eq('id', existingExam.id);
+                    const { error: exUpErr } = await supabase.from('evaluations').update(examData).eq('id', existingExam.id);
+                    if (exUpErr) throw exUpErr;
                 } else {
-                    await supabase.from('evaluations').insert(examData);
+                    const { error: exInsErr } = await supabase.from('evaluations').insert(examData);
+                    if (exInsErr) throw exInsErr;
                 }
             }
 
