@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 const WorkerRegister = () => {
     const { register, user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({ fullName: '', email: '', password: '', employeeId: '', companyCode: '' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [formData, setFormData] = useState({ fullName: '', email: '', password: '', confirmPassword: '', employeeId: '', companyCode: '' });
     const [error, setError] = useState('');
 
     if (!loading && user) return <Navigate to="/dashboard" replace />;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (formData.password !== formData.confirmPassword) {
+            setError('Las contraseñas no coinciden. Por favor verifica.');
+            return;
+        }
+
         setLoading(true);
         setError('');
         try {
@@ -97,8 +106,8 @@ const WorkerRegister = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-black">ID Empleado</label>
-                                <input type="text" placeholder="ID-000"
+                                <label className="text-sm font-bold text-black">documento_empleado</label>
+                                <input required type="text" placeholder="Ej. 1012442033"
                                     className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#f3b012]/30 focus:border-[#f3b012] outline-none transition-all text-black"
                                     value={formData.employeeId}
                                     onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
@@ -123,11 +132,37 @@ const WorkerRegister = () => {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-black">Contraseña</label>
-                            <input required type="password" placeholder="Mínimo 8 caracteres"
-                                className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#f3b012]/30 focus:border-[#f3b012] outline-none transition-all text-black"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
+                            <div className="relative">
+                                <input required type={showPassword ? 'text' : 'password'} placeholder="Mínimo 8 caracteres"
+                                    className="w-full px-5 py-4 pr-12 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#f3b012]/30 focus:border-[#f3b012] outline-none transition-all text-black"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-black">Confirmar Contraseña</label>
+                            <div className="relative">
+                                <input required type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirma tu contraseña"
+                                    className="w-full px-5 py-4 pr-12 rounded-2xl border border-gray-200 bg-white focus:ring-2 focus:ring-[#f3b012]/30 focus:border-[#f3b012] outline-none transition-all text-black"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
                         <button disabled={loading} type="submit"
                             className="w-full py-4 bg-[#f3b012] text-black rounded-2xl font-black text-lg shadow-lg shadow-[#f3b012]/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
