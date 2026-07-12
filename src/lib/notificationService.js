@@ -79,3 +79,178 @@ export async function notifyCompanyOnEntry(workerId, courseId) {
         console.error('Error sending entry notification:', e);
     }
 }
+
+/** Notify company admin when a worker completes the final exam */
+export async function notifyCompanyOnExamFinish(workerId, courseId, score, passed) {
+    try {
+        const { data: course } = await supabase
+            .from('courses')
+            .select('company_id, title')
+            .eq('id', courseId)
+            .single();
+
+        if (!course) return;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, employee_id')
+            .eq('id', workerId)
+            .single();
+
+        if (!profile) return;
+
+        const { data: companyAdmins } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('company_id', course.company_id)
+            .eq('role', 'admin');
+
+        if (companyAdmins && companyAdmins.length > 0) {
+            const notifications = companyAdmins.map(admin => ({
+                user_id: admin.id,
+                company_id: course.company_id,
+                sender_id: workerId,
+                title: passed ? 'Examen Aprobado' : 'Examen Finalizado',
+                message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha completado el examen de ${course.title} con un puntaje de ${score}%. Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}.`,
+                type: 'exam_completion'
+            }));
+
+            await supabase.from('notifications').insert(notifications);
+        }
+    } catch (e) {
+        console.error('Error sending exam completion notification:', e);
+    }
+}
+
+/** Notify company admin when a worker requests their certificate manually due to download limit */
+export async function notifyCompanyOnCertificateRequest(workerId, courseId) {
+    try {
+        const { data: course } = await supabase
+            .from('courses')
+            .select('company_id, title')
+            .eq('id', courseId)
+            .single();
+
+        if (!course) return;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, employee_id')
+            .eq('id', workerId)
+            .single();
+
+        if (!profile) return;
+
+        const { data: companyAdmins } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('company_id', course.company_id)
+            .eq('role', 'admin');
+
+        if (companyAdmins && companyAdmins.length > 0) {
+            const notifications = companyAdmins.map(admin => ({
+                user_id: admin.id,
+                company_id: course.company_id,
+                sender_id: workerId,
+                title: 'Solicitud de Certificado',
+                message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha solicitado la emisión de su certificado del curso: ${course.title} tras agotar el límite de descargas.`,
+                type: 'certificate_request'
+            }));
+
+            await supabase.from('notifications').insert(notifications);
+        }
+    } catch (e) {
+        console.error('Error sending certificate request notification:', e);
+    }
+}
+
+/** Notify company admin when a worker requests more attempts for a module quiz */
+export async function notifyCompanyOnQuizAttemptRequest(workerId, courseId, moduleId) {
+    try {
+        const { data: course } = await supabase
+            .from('courses')
+            .select('company_id, title')
+            .eq('id', courseId)
+            .single();
+
+        if (!course) return;
+
+        const { data: moduleData } = await supabase
+            .from('modules')
+            .select('title')
+            .eq('id', moduleId)
+            .single();
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, employee_id')
+            .eq('id', workerId)
+            .single();
+
+        if (!profile) return;
+
+        const { data: companyAdmins } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('company_id', course.company_id)
+            .eq('role', 'admin');
+
+        if (companyAdmins && companyAdmins.length > 0) {
+            const notifications = companyAdmins.map(admin => ({
+                user_id: admin.id,
+                company_id: course.company_id,
+                sender_id: workerId,
+                title: 'Solicitud de Intentos (Quiz)',
+                message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha agotado sus intentos del quiz del módulo "${moduleData?.title || 'Módulo'}" (Curso: ${course.title}) y solicita intentos adicionales para habilitar su certificación.`,
+                type: 'quiz_attempt_request'
+            }));
+
+            await supabase.from('notifications').insert(notifications);
+        }
+    } catch (e) {
+        console.error('Error sending quiz attempt request notification:', e);
+    }
+}
+
+/** Notify company admin when a worker requests more attempts for the final exam */
+export async function notifyCompanyOnExamAttemptRequest(workerId, courseId) {
+    try {
+        const { data: course } = await supabase
+            .from('courses')
+            .select('company_id, title')
+            .eq('id', courseId)
+            .single();
+
+        if (!course) return;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, employee_id')
+            .eq('id', workerId)
+            .single();
+
+        if (!profile) return;
+
+        const { data: companyAdmins } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('company_id', course.company_id)
+            .eq('role', 'admin');
+
+        if (companyAdmins && companyAdmins.length > 0) {
+            const notifications = companyAdmins.map(admin => ({
+                user_id: admin.id,
+                company_id: course.company_id,
+                sender_id: workerId,
+                title: 'Solicitud de Intentos (Examen)',
+                message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha agotado sus intentos del examen de certificación del curso "${course.title}" y solicita intentos adicionales.`,
+                type: 'exam_attempt_request'
+            }));
+
+            await supabase.from('notifications').insert(notifications);
+        }
+    } catch (e) {
+        console.error('Error sending exam attempt request notification:', e);
+    }
+}
+

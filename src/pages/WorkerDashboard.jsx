@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import CourseViewer from './worker/CourseViewer';
+import PageChatWorker from './worker/PageChatWorker';
 import { getWorkerAssignments } from '../lib/assignmentService';
 import { getWorkerCertificates } from '../lib/certificateService';
 import { calcCourseProgress } from '../lib/progressService';
 import { Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { getNotifications, markAsRead, notifyCompanyOnEntry } from '../lib/notificationService';
+import { getNotifications, markAsRead, notifyCompanyOnEntry, notifyCompanyOnCertificateRequest } from '../lib/notificationService';
 
 /* ─── Helpers ─── */
 const CATEGORY_ICONS = {
@@ -560,7 +561,7 @@ const PageEmpresas = ({ companies, onJoin, onJoinCourse, joining, joiningCourse 
 };
 
 /* ─── PAGE: Certificados ─── */
-const PageCertificados = ({ certs = [], loadingCerts, onDownload, downloadingId }) => (
+const PageCertificados = ({ certs = [], loadingCerts, onDownload, downloadingId, onRequestManual, requestingId }) => (
     <div>
         <div className="flex items-center justify-between mb-6">
             <div>
@@ -591,26 +592,45 @@ const PageCertificados = ({ certs = [], loadingCerts, onDownload, downloadingId 
                         </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-gray-900 font-bold text-sm tracking-tight mb-1 truncate">{c.courses?.title || 'Curso Certificado'}</h3>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-1">
                                 <span className="text-blue-600 font-black text-[10px] uppercase">
                                     {new Date(c.issue_date || c.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </span>
                                 <span className="text-gray-200">|</span>
                                 <code className="text-[9px] font-black text-gray-400">{c.cert_code || c.verification_code}</code>
                             </div>
+                            <p className="text-[10px] text-gray-400 font-semibold">
+                                Descargas: <span className="text-gray-700 font-bold">{c.download_count || 0}/3</span>
+                            </p>
                         </div>
-                        <button
-                            onClick={() => onDownload(c)}
-                            disabled={downloadingId === c.id}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-600 hover:text-white transition-all shrink-0 ${downloadingId === c.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title="Descargar Certificado"
-                        >
-                            {downloadingId === c.id ? (
-                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        {c.download_count >= 3 ? (
+                            c.requested_manually ? (
+                                <span className="text-[10px] text-amber-600 font-black bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 shrink-0">
+                                    Solicitud Enviada
+                                </span>
                             ) : (
-                                <span className="material-symbols-outlined">download</span>
-                            )}
-                        </button>
+                                <button
+                                    onClick={() => onRequestManual(c)}
+                                    disabled={requestingId === c.id}
+                                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black rounded-lg transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                                >
+                                    {requestingId === c.id ? 'Solicitando...' : 'Solicitar PDF'}
+                                </button>
+                            )
+                        ) : (
+                            <button
+                                onClick={() => onDownload(c)}
+                                disabled={downloadingId === c.id}
+                                className={`w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-600 hover:text-white transition-all shrink-0 ${downloadingId === c.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Descargar Certificado"
+                            >
+                                {downloadingId === c.id ? (
+                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <span className="material-symbols-outlined">download</span>
+                                )}
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>
@@ -665,6 +685,7 @@ const WorkerDashboard = () => {
     const [pdfFields, setPdfFields] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [requestingId, setRequestingId] = useState(null);
 
     // Notifications state
     const [notifications, setNotifications] = useState([]);
@@ -676,6 +697,7 @@ const WorkerDashboard = () => {
         if (path.includes('/cursos')) return 'cursos';
         if (path.includes('/empresas')) return 'empresas';
         if (path.includes('/certificados')) return 'certificados';
+        if (path.includes('/chat')) return 'chat';
         if (path.includes('/perfil')) return 'perfil';
         return 'inicio';
     };
@@ -686,6 +708,7 @@ const WorkerDashboard = () => {
         { id: 'cursos', icon: 'menu_book', label: 'Cursos', path: '/dashboard/cursos' },
         { id: 'empresas', icon: 'apartment', label: 'Empresas', path: '/dashboard/empresas' },
         { id: 'certificados', icon: 'workspace_premium', label: 'Certificados', path: '/dashboard/certificados' },
+        { id: 'chat', icon: 'chat', label: 'Chat', path: '/dashboard/chat' },
         { id: 'perfil', icon: 'person', label: 'Perfil', path: '/dashboard/perfil' },
     ];
 
@@ -713,7 +736,7 @@ const WorkerDashboard = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, [profile?.id]);
+    useEffect(() => { loadData(); }, [profile?.id, location.pathname]);
 
     const handleUpdateProfile = async (newData) => {
         try {
@@ -725,7 +748,11 @@ const WorkerDashboard = () => {
             window.location.reload();
         } catch (e) {
             console.error(e);
-            alert('Error al actualizar el perfil: ' + e.message);
+            let msg = 'Error al actualizar el perfil. Inténtalo de nuevo.';
+            if (e.message && (e.message.includes('profiles_employee_id_key') || (e.message.toLowerCase().includes('duplicate key') && e.message.toLowerCase().includes('employee_id')))) {
+                msg = 'El documento ingresado ya está siendo usado por otro usuario.';
+            }
+            alert(msg);
         }
     };
 
@@ -866,6 +893,29 @@ const WorkerDashboard = () => {
         }
     };
 
+    const handleRequestManual = async (cert) => {
+        if (requestingId) return;
+        setRequestingId(cert.id);
+        try {
+            const { error } = await supabase
+                .from('certificates')
+                .update({ requested_manually: true })
+                .eq('id', cert.id);
+
+            if (error) throw error;
+
+            await notifyCompanyOnCertificateRequest(profile.id, cert.course_id);
+
+            alert('Solicitud enviada exitosamente al administrador.');
+            loadData();
+        } catch (e) {
+            console.error('Error requesting manual certificate:', e);
+            alert('Error al enviar la solicitud. Inténtalo de nuevo.');
+        } finally {
+            setRequestingId(null);
+        }
+    };
+
     // Determine if we are on a course page or nested course path
     const courseMatch = location.pathname.match(/\/dashboard\/curso\/([a-zA-Z0-9-]+)(\/.*)?/);
     const urlCourseId = courseMatch ? courseMatch[1] : null;
@@ -987,7 +1037,7 @@ const WorkerDashboard = () => {
                         <Route index element={<PageInicio profile={profile} assignments={assignments} certs={certs} loadingCourses={loadingCourses} onCourseClick={(c) => navigate(`/dashboard/curso/${c.id}`)} onCompleteData={() => setIsUpdateProfileOpen(true)} />} />
                         <Route path="inicio" element={<PageInicio profile={profile} assignments={assignments} certs={certs} loadingCourses={loadingCourses} onCourseClick={(c) => navigate(`/dashboard/curso/${c.id}`)} onCompleteData={() => setIsUpdateProfileOpen(true)} />} />
                         <Route path="cursos" element={<PageCursos assignments={assignments} loadingCourses={loadingCourses} onCourseClick={(c) => navigate(`/dashboard/curso/${c.id}`)} onJoinCourse={handleJoinCourse} joiningCourse={joiningCourse} />} />
-                        <Route path="certificados" element={<PageCertificados certs={certs} loadingCerts={loadingCerts} onDownload={handleDownloadCert} downloadingId={downloadingId} />} />
+                        <Route path="certificados" element={<PageCertificados certs={certs} loadingCerts={loadingCerts} onDownload={handleDownloadCert} downloadingId={downloadingId} onRequestManual={handleRequestManual} requestingId={requestingId} />} />
                         <Route path="empresas" element={<PageEmpresas
                             companies={workerCompanies}
                             onJoin={handleJoinCompany}
@@ -996,6 +1046,7 @@ const WorkerDashboard = () => {
                             joiningCourse={joiningCourse}
                         />} />
                         <Route path="perfil" element={<PagePerfil profile={profile} signOut={signOut} />} />
+                        <Route path="chat" element={<PageChatWorker />} />
                         {/* Fallback to index if path not found */}
                         <Route path="*" element={<PageInicio profile={profile} assignments={assignments} certs={certs} loadingCourses={loadingCourses} onCourseClick={(c) => navigate(`/dashboard/curso/${c.id}`)} onCompleteData={() => setIsUpdateProfileOpen(true)} />} />
                     </Routes>

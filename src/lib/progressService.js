@@ -22,17 +22,35 @@ export async function getCourseProgress(userId, courseId) {
     return data;
 }
 
-/** Mark a module as completed */
 export async function markModuleComplete(userId, moduleId, score = null) {
+    const { data: existing, error: fetchError } = await supabase
+        .from('progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('module_id', moduleId)
+        .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    const updateData = {
+        user_id: userId,
+        module_id: moduleId,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+    };
+
+    if (existing) {
+        updateData.id = existing.id;
+        updateData.last_score = score !== null ? score : existing.last_score;
+        updateData.attempts_count = score !== null ? (existing.attempts_count || 0) + 1 : (existing.attempts_count || 0);
+    } else {
+        updateData.last_score = score;
+        updateData.attempts_count = score !== null ? 1 : 0;
+    }
+
     const { data, error } = await supabase
         .from('progress')
-        .upsert({
-            user_id: userId,
-            module_id: moduleId,
-            status: 'completed',
-            last_score: score,
-            completed_at: new Date().toISOString(),
-        })
+        .upsert(updateData)
         .select()
         .single();
     if (error) throw error;

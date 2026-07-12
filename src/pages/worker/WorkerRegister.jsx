@@ -36,7 +36,11 @@ const WorkerRegister = () => {
             if (error) throw error;
             navigate('/login');
         } catch (err) {
-            setError(err.message);
+            let msg = err.message || 'Error al registrarse. Inténtalo de nuevo.';
+            if (msg.includes('profiles_employee_id_key') || (msg.toLowerCase().includes('duplicate key') && msg.toLowerCase().includes('employee_id'))) {
+                msg = 'El documento ingresado ya está registrado para otro usuario. Por favor verifica el número o inicia sesión.';
+            }
+            setError(msg);
         } finally {
             setLoading(false);
         }

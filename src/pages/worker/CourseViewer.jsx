@@ -4,7 +4,8 @@ import { getCourseWithModules } from '../../lib/courseService';
 import { getCourseProgress, markModuleComplete } from '../../lib/progressService';
 import { supabase } from '../../lib/supabase';
 import ExamView from './ExamView';
-import { getBestScore } from '../../lib/examService';
+import { getBestScore, getAttempts } from '../../lib/examService';
+import { notifyCompanyOnQuizAttemptRequest } from '../../lib/notificationService';
 
 
 /* ─── Video/Content Player ─── */
@@ -107,7 +108,7 @@ const LessonItem = ({ lesson, isActive }) => {
 };
 
 /* ─── Module accordion ─── */
-const ModuleAccordion = ({ mod, index, isLocked, isCompleted, isActive, expanded, onToggle, onClick, onTakeQuiz, progress }) => {
+const ModuleAccordion = ({ mod, index, isLocked, isCompleted, isActive, expanded, onToggle, onClick, onTakeQuiz, progress, onRequestQuizAttempt, requestingQuizId }) => {
     return (
         <div className={`rounded-2xl overflow-hidden border transition-all ${isActive ? 'border-2 border-blue-400 ring-4 ring-blue-50 shadow-md' : isLocked ? 'border border-gray-100 opacity-60' : 'border border-gray-100 bg-white'}`}>
             <button
@@ -122,36 +123,34 @@ const ModuleAccordion = ({ mod, index, isLocked, isCompleted, isActive, expanded
                         )}
                     </div>
                     <div>
-                        <span className={`font-bold text-sm block leading-none ${isActive ? 'text-blue-600' : isLocked ? 'text-gray-400' : 'text-gray-900'}`}>
-                            Módulo {index + 1}: {mod.title}
-                        </span>
-                        {mod.description && <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{mod.description}</p>}
+                        <h4 className="text-gray-900 text-sm font-black tracking-tight leading-tight">{mod.title || `Módulo ${index + 1}`}</h4>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-0.5">{mod.content_type || 'Lectura'}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {isLocked && <span className="material-symbols-outlined text-gray-300 text-sm">lock</span>}
-                    <span className={`material-symbols-outlined ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
-                        {expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
-                    </span>
-                </div>
+                <span className="material-symbols-outlined text-gray-400 text-xl transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }}>
+                    expand_more
+                </span>
             </button>
 
             {expanded && (
-                <div className="px-4 pb-4 space-y-3">
-                    {/* Module Content Access */}
+                <div className="p-4 bg-gray-50/30 border-t border-gray-100 space-y-3">
+                    {/* Material button */}
                     {!isLocked ? (
                         <button
+                            disabled={isLocked}
                             onClick={onClick}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-700 border-gray-100 hover:border-blue-200'}`}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-gray-200 hover:bg-gray-50'} disabled:opacity-50`}
                         >
-                            <span className="material-symbols-outlined">
-                                {mod.content_type === 'video' ? 'play_circle' : mod.content_type === 'pdf' ? 'picture_as_pdf' : 'text_snippet'}
-                            </span>
-                            <div className="text-left flex-1">
-                                <p className="text-xs font-bold">Ver Material de Estudio</p>
-                                <p className={`text-[10px] ${isActive ? 'text-blue-100' : 'text-gray-400'}`}>
-                                    {mod.content_type === 'video' ? 'Video instructivo' : mod.content_type === 'pdf' ? 'Documento PDF' : 'Contenido de texto'}
-                                </p>
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">
+                                    {mod.content_type === 'video' ? 'play_circle' : 'description'}
+                                </span>
+                                <div className="text-left flex-1">
+                                    <p className="text-xs font-bold">Ver Material de Estudio</p>
+                                    <p className={`text-[10px] ${isActive ? 'text-blue-100' : 'text-gray-400'}`}>
+                                        {mod.content_type === 'video' ? 'Video instructivo' : mod.content_type === 'pdf' ? 'Documento PDF' : 'Contenido de texto'}
+                                    </p>
+                                </div>
                             </div>
                         </button>
                     ) : (
@@ -167,23 +166,29 @@ const ModuleAccordion = ({ mod, index, isLocked, isCompleted, isActive, expanded
                             {mod.evaluations.map((ev, idx) => {
                                 const prog = progress.find(p => p.module_id === mod.id);
                                 const isDone = prog?.last_score >= (ev.passing_score || 70);
+                                const attemptsLimit = ev.attempts_limit ?? 3;
+                                const attemptsCount = prog?.attempts_count || 0;
+                                const outOfAttempts = !isDone && attemptsCount >= attemptsLimit;
+
                                 return (
                                     <button
                                         key={ev.id}
-                                        disabled={isLocked}
-                                        onClick={() => onTakeQuiz(mod, ev)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isDone ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-blue-100 hover:bg-blue-50/50'} disabled:opacity-50`}
+                                        disabled={isLocked || requestingQuizId === ev.id}
+                                        onClick={outOfAttempts ? () => onRequestQuizAttempt(mod, ev) : () => onTakeQuiz(mod, ev)}
+                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isDone ? 'bg-emerald-50 border-emerald-100' : outOfAttempts ? 'bg-amber-50 border-amber-200' : 'bg-white border-blue-100 hover:bg-blue-50/50'} disabled:opacity-50`}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <span className={`material-symbols-outlined ${isDone ? 'text-emerald-500' : 'text-blue-500'} text-sm`}>
-                                                {isDone ? 'check_circle' : 'quiz'}
+                                            <span className={`material-symbols-outlined ${isDone ? 'text-emerald-500' : outOfAttempts ? 'text-amber-500' : 'text-blue-500'} text-sm`}>
+                                                {isDone ? 'check_circle' : outOfAttempts ? 'support_agent' : 'quiz'}
                                             </span>
-                                            <span className={`text-xs font-bold ${isDone ? 'text-emerald-700' : 'text-gray-700'}`}>
-                                                {isDone ? 'Quiz Aprobado' : 'Realizar Quiz'}
+                                            <span className={`text-xs font-bold ${isDone ? 'text-emerald-700' : outOfAttempts ? 'text-amber-700' : 'text-gray-700'}`}>
+                                                {isDone ? 'Quiz Aprobado' : outOfAttempts ? (requestingQuizId === ev.id ? 'Enviando...' : 'Solicitar Intento Adicional') : 'Realizar Quiz'}
                                             </span>
                                         </div>
                                         {isDone ? (
                                             <span className="text-[10px] bg-emerald-100 text-emerald-600 font-black px-2 py-0.5 rounded-full">{prog.last_score}%</span>
+                                        ) : outOfAttempts ? (
+                                            <span className="text-[10px] bg-amber-100 text-amber-600 font-black px-2 py-0.5 rounded-full">Agotado</span>
                                         ) : (
                                             <span className="text-[10px] bg-blue-100 text-blue-600 font-black px-2 py-0.5 rounded-full">Pendiente</span>
                                         )}
@@ -214,6 +219,11 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
     const [activeQuiz, setActiveQuiz] = useState(null);
     const [activeNav, setActiveNav] = useState('cursos');
     const [examAttempt, setExamAttempt] = useState(null);
+    const [allExamAttempts, setAllExamAttempts] = useState([]);
+    const [certificate, setCertificate] = useState(null);
+    const [requestingQuizId, setRequestingQuizId] = useState(null);
+    const [isResetPermitted, setIsResetPermitted] = useState(false);
+    const [resettingProgress, setResettingProgress] = useState(false);
 
     // Sync Exam/Quiz state with URL subPath
     useEffect(() => {
@@ -259,6 +269,25 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                 const best = await getBestScore(profile.id, courseId);
                 setExamAttempt(best);
 
+                const attempts = await getAttempts(profile.id, courseId);
+                setAllExamAttempts(attempts || []);
+
+                const { data: cert } = await supabase
+                    .from('certificates')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .eq('course_id', courseId)
+                    .maybeSingle();
+                setCertificate(cert);
+
+                const { data: assignData } = await supabase
+                    .from('course_assignments')
+                    .select('reset_permitted')
+                    .eq('worker_id', profile.id)
+                    .eq('course_id', courseId)
+                    .maybeSingle();
+                setIsResetPermitted(assignData?.reset_permitted || false);
+
                 const prog = await getCourseProgress(profile.id, courseId);
                 setProgress(prog || []);
 
@@ -291,7 +320,17 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
 
     const modules = courseData?.modules || [];
     const activeModule = modules[activeModuleIdx];
-    const overallProgress = (progress.filter(p => p.status === 'completed').length / (modules.length || 1)) * 100;
+    const isModuleFullyCompleted = (mod) => {
+        const prog = progress.find(p => p.module_id === mod.id);
+        if (!prog || prog.status !== 'completed') return false;
+        const quiz = mod.evaluations?.find(e => e.type === 'module_quiz');
+        if (quiz) {
+            return (prog.last_score || 0) >= (quiz.passing_score || 70);
+        }
+        return true;
+    };
+
+    const overallProgress = (modules.filter(isModuleFullyCompleted).length / (modules.length || 1)) * 100;
 
     // Check if current module has a quiz that must be passed
     const currentModuleProg = progress.find(p => p.module_id === activeModule?.id);
@@ -305,7 +344,100 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         courseData?.modules?.reduce((acc, m) => acc || m.evaluations?.find(e => e.type === 'final_exam'), null);
 
     const onTakeQuiz = (mod, ev) => {
+        const prog = progress.find(p => p.module_id === mod.id);
+        const attemptsLimit = ev.attempts_limit ?? 3;
+        const attemptsCount = prog?.attempts_count || 0;
+        const isDone = prog?.last_score >= (ev.passing_score || 70);
+
+        if (isDone) {
+            alert('Este cuestionario ya ha sido aprobado.');
+            return;
+        }
+
+        if (attemptsCount >= attemptsLimit) {
+            alert(`Has alcanzado el límite de intentos permitidos (${attemptsLimit}) para este cuestionario.`);
+            return;
+        }
+
         if (onUpdatePath) onUpdatePath(`/quiz/${mod.id}`);
+    };
+
+    const handleRequestQuizAttempt = async (mod, ev) => {
+        if (requestingQuizId) return;
+        setRequestingQuizId(ev.id);
+        try {
+            await notifyCompanyOnQuizAttemptRequest(profile.id, courseId, mod.id);
+            alert('Tu solicitud de intento adicional para este quiz ha sido enviada al administrador.');
+        } catch (e) {
+            console.error('Error requesting quiz attempt:', e);
+            alert('Error al enviar la solicitud. Inténtalo de nuevo.');
+        } finally {
+            setRequestingQuizId(null);
+        }
+    };
+
+    const handleFinalExamStart = () => {
+        const attemptsLimit = finalExam?.attempts_limit ?? 3;
+        const attemptsCount = allExamAttempts.length;
+
+        if (examAttempt?.passed) {
+            if (onUpdatePath) onUpdatePath('/examen');
+            return;
+        }
+
+        if (attemptsCount >= attemptsLimit) {
+            alert(`Has alcanzado el límite de intentos permitidos (${attemptsLimit}) para el examen final.`);
+            return;
+        }
+
+        if (onUpdatePath) onUpdatePath('/examen');
+    };
+
+    const handleExecuteProgressReset = async () => {
+        if (!window.confirm('¿Estás seguro de que deseas restablecer por completo este curso? Esto borrará tu progreso de lectura, calificaciones de quices, intentos y certificados emitidos para comenzar desde cero.')) return;
+        setResettingProgress(true);
+        try {
+            const moduleIds = modules.map(m => m.id);
+
+            if (moduleIds.length > 0) {
+                const { error: progErr } = await supabase
+                    .from('progress')
+                    .delete()
+                    .eq('user_id', profile?.id)
+                    .in('module_id', moduleIds);
+                if (progErr) throw progErr;
+            }
+
+            const { error: examErr } = await supabase
+                .from('exam_attempts')
+                .delete()
+                .eq('user_id', profile?.id)
+                .eq('course_id', courseId);
+            if (examErr) throw examErr;
+
+            const { error: certErr } = await supabase
+                .from('certificates')
+                .delete()
+                .eq('user_id', profile?.id)
+                .eq('course_id', courseId);
+            if (certErr) throw certErr;
+
+            const { error: assignErr } = await supabase
+                .from('course_assignments')
+                .update({ reset_permitted: false })
+                .eq('worker_id', profile?.id)
+                .eq('course_id', courseId);
+            if (assignErr) throw assignErr;
+
+            alert('Tu progreso ha sido completamente restablecido. El curso iniciará desde cero.');
+            setIsResetPermitted(false);
+            window.location.reload();
+        } catch (e) {
+            console.error('Error resetting progress:', e);
+            alert('Ocurrió un error al restablecer el curso. Inténtalo de nuevo.');
+        } finally {
+            setResettingProgress(false);
+        }
     };
 
     const handleQuizFinish = async (score) => {
@@ -313,8 +445,8 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         try {
             await markModuleComplete(profile.id, activeQuiz.module_id, score);
             // Refresh progress in background
-            const prog = await getCourseProgress(profile.id, courseProp.id);
-            setProgress(prog);
+            const prog = await getCourseProgress(profile.id, courseId);
+            setProgress(prog || []);
         } catch (e) {
             console.error(e);
         }
@@ -322,6 +454,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
     };
 
     if (takingQuiz && activeQuiz) {
+        const quizProg = progress.find(p => p.module_id === activeQuiz.module_id);
         return (
             <ExamView
                 courseName={activeQuiz.moduleTitle}
@@ -332,11 +465,17 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                 onGoHome={() => { onUpdatePath(''); onBack(); }}
                 isModuleQuiz={true}
                 onFinish={handleQuizFinish}
+                timeLimit={activeQuiz.time_limit}
+                attemptsLimit={activeQuiz.attempts_limit}
+                attemptsCount={quizProg?.attempts_count || 0}
+                moduleId={activeQuiz.module_id}
             />
         );
     }
 
     if (takingExam) {
+        // Find if they have any passed attempt in all attempts
+        const passedAttempt = allExamAttempts.find(a => a.passed);
         return (
             <ExamView
                 courseName={courseData?.title}
@@ -345,6 +484,14 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                 questions={finalExam?.questions || []}
                 onBack={() => onUpdatePath('')}
                 onGoHome={() => { onUpdatePath(''); onBack(); }}
+                timeLimit={finalExam?.time_limit}
+                attemptsLimit={finalExam?.attempts_limit}
+                attemptsCount={allExamAttempts.length}
+                viewResultsMode={!!passedAttempt}
+                completedScore={passedAttempt?.score}
+                completedTimeUsed={passedAttempt ? Math.ceil((passedAttempt.time_used_seconds || 0) / 60) : 0}
+                completedCertCode={certificate?.verification_code}
+                onDownloadCertificate={() => onNavigate && onNavigate('certificados')}
             />
         );
     }
@@ -436,8 +583,18 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                             <div className="grid gap-3">
                                 {modules.map((mod, idx) => {
                                     const p = progress.find(pr => pr.module_id === mod.id);
-                                    const isCompleted = p?.status === 'completed';
-                                    const isUnlocked = idx === 0 || progress.find(pr => pr.module_id === modules[idx - 1].id)?.status === 'completed';
+                                    const quiz = mod.evaluations?.find(e => e.type === 'module_quiz');
+                                    const isCompleted = p?.status === 'completed' && (!quiz || (p.last_score || 0) >= (quiz.passing_score || 70));
+                                    const isUnlocked = idx === 0 || (() => {
+                                        const prevMod = modules[idx - 1];
+                                        const prevP = progress.find(pr => pr.module_id === prevMod.id);
+                                        if (!prevP || prevP.status !== 'completed') return false;
+                                        const prevQuiz = prevMod.evaluations?.find(e => e.type === 'module_quiz');
+                                        if (prevQuiz) {
+                                            return (prevP.last_score || 0) >= (prevQuiz.passing_score || 70);
+                                        }
+                                        return true;
+                                    })();
                                     const isActive = activeModuleIdx === idx;
 
                                     return (
@@ -453,6 +610,8 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                                             onClick={() => { setActiveModuleIdx(idx); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                                             onTakeQuiz={onTakeQuiz}
                                             progress={progress}
+                                            onRequestQuizAttempt={handleRequestQuizAttempt}
+                                            requestingQuizId={requestingQuizId}
                                         />
                                     );
                                 })}
@@ -492,7 +651,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                                             : 'Has completado todos los módulos. Realiza la evaluación final para obtener tu certificación técnica.'}
                                     </p>
                                     <button
-                                        onClick={() => onUpdatePath && onUpdatePath('/examen')}
+                                        onClick={handleFinalExamStart}
                                         className="w-full py-4 bg-white text-blue-600 font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors shadow-black/10"
                                     >
                                         <span className="material-symbols-outlined">{examAttempt?.passed ? 'visibility' : 'quiz'}</span>
@@ -501,6 +660,44 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                                 </div>
                             </section>
                         )}
+
+                        {/* Course Reset Panel */}
+                        <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4 mt-4">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                    isResetPermitted ? 'bg-amber-50 text-amber-600 animate-pulse' : 'bg-gray-50 text-gray-400'
+                                }`}>
+                                    <span className="material-symbols-outlined text-xl">restart_alt</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-xs font-black text-gray-900">Restablecer Progreso Completo</h4>
+                                    <p className="text-gray-400 text-[10px] font-medium leading-relaxed mt-0.5">
+                                        {isResetPermitted 
+                                            ? 'El administrador ha autorizado el reinicio de tu curso. Haz clic abajo para restablecer todos tus intentos y certificados.'
+                                            : 'Si agotaste tus intentos o requieres reiniciar, solicita autorización a tu administrador.'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {isResetPermitted ? (
+                                <button
+                                    onClick={handleExecuteProgressReset}
+                                    disabled={resettingProgress}
+                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-amber-100 flex items-center justify-center gap-2 transition-all active:scale-95 text-xs disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined text-base">refresh</span>
+                                    {resettingProgress ? 'Restableciendo...' : 'Restablecer Todo el Curso'}
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    className="w-full bg-gray-100 text-gray-400 font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs cursor-not-allowed"
+                                >
+                                    <span className="material-symbols-outlined text-base">lock</span>
+                                    Reinicio No Autorizado
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </main>
 

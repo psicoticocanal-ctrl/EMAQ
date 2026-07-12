@@ -476,18 +476,42 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
                             </button>
                         </div>
                         {showQuiz && (
-                            <QuizPanel
-                                title="Preguntas del módulo"
-                                icon="quiz"
-                                questions={mod.quiz || []}
-                                onChange={(q) => updateField('quiz', q)}
-                                accentColor="blue"
-                            />
+                            <>
+                                <QuizPanel
+                                    title="Preguntas del módulo"
+                                    icon="quiz"
+                                    questions={mod.quiz || []}
+                                    onChange={(q) => updateField('quiz', q)}
+                                    accentColor="blue"
+                                />
+                                <div className="grid grid-cols-2 gap-4 mt-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-700">Límite de Intentos</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            className={`${inputCls} py-2 px-3 text-xs`}
+                                            value={mod.attempts_limit ?? 3}
+                                            onChange={e => updateField('attempts_limit', parseInt(e.target.value) || 3)}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-700">Tiempo Límite (minutos)</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            className={`${inputCls} py-2 px-3 text-xs`}
+                                            value={mod.time_limit ?? 15}
+                                            onChange={e => updateField('time_limit', parseInt(e.target.value) || 15)}
+                                        />
+                                    </div>
+                                </div>
+                            </>
                         )}
                         {!showQuiz && (mod.quiz || []).length > 0 && (
                             <div className="flex items-center gap-2 text-xs text-blue-600">
                                 <span className="material-symbols-outlined text-sm">check_circle</span>
-                                <span className="font-bold">{mod.quiz.length} {mod.quiz.length === 1 ? 'pregunta' : 'preguntas'} configuradas</span>
+                                <span className="font-bold">{mod.quiz.length} {mod.quiz.length === 1 ? 'pregunta' : 'preguntas'} configuradas (Límite: {mod.attempts_limit ?? 3} int. / {mod.time_limit ?? 15} min)</span>
                             </div>
                         )}
                     </div>
@@ -518,6 +542,8 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
     });
     const [modules, setModules] = useState([]);
     const [finalExam, setFinalExam] = useState([]);
+    const [finalExamAttemptsLimit, setFinalExamAttemptsLimit] = useState(3);
+    const [finalExamTimeLimit, setFinalExamTimeLimit] = useState(45);
     const [loading, setLoading] = useState(!!initialCourse?.id);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -540,13 +566,17 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                         ...m,
                         expanded: false,
                         quiz: mEvals?.[0]?.questions || [],
-                        _evalId: mEvals?.[0]?.id || null
+                        _evalId: mEvals?.[0]?.id || null,
+                        attempts_limit: mEvals?.[0]?.attempts_limit ?? 3,
+                        time_limit: mEvals?.[0]?.time_limit ?? 15
                     };
                 })).then(enriched => setModules(enriched));
             }
             const exam = evals?.find(e => e.type === 'final_exam');
             if (exam) {
                 setFinalExam(exam.questions || []);
+                setFinalExamAttemptsLimit(exam.attempts_limit ?? 3);
+                setFinalExamTimeLimit(exam.time_limit ?? 45);
             }
             setLoading(false);
         });
@@ -634,7 +664,9 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                         course_id: courseId,
                         type: 'module_quiz',
                         questions: m.quiz || [],
-                        passing_score: 70
+                        passing_score: 70,
+                        attempts_limit: m.attempts_limit ?? 3,
+                        time_limit: m.time_limit ?? 15
                     };
                     if (m._evalId) {
                         const { error: evUpErr } = await supabase.from('evaluations').update(evalData).eq('id', m._evalId);
@@ -656,7 +688,9 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                     type: 'final_exam',
                     questions: finalExam,
                     passing_score: 70,
-                    module_id: null
+                    module_id: null,
+                    attempts_limit: finalExamAttemptsLimit,
+                    time_limit: finalExamTimeLimit
                 };
                 if (existingExam) {
                     const { error: exUpErr } = await supabase.from('evaluations').update(examData).eq('id', existingExam.id);
@@ -936,6 +970,29 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
                                 <p className="text-xs text-amber-700 mt-0.5">
                                     El trabajador debe completar todos los módulos y aprobar este examen para obtener su certificado.
                                 </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-2xl border border-gray-100 p-5 shadow-sm">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700">Límite de Intentos del Examen Final</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    className={inputCls}
+                                    value={finalExamAttemptsLimit}
+                                    onChange={e => setFinalExamAttemptsLimit(parseInt(e.target.value) || 3)}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-700">Tiempo Límite del Examen Final (minutos)</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    className={inputCls}
+                                    value={finalExamTimeLimit}
+                                    onChange={e => setFinalExamTimeLimit(parseInt(e.target.value) || 45)}
+                                />
                             </div>
                         </div>
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { submitExam } from '../../lib/examService';
 import { issueCertificate } from '../../lib/certificateService';
+import { notifyCompanyOnExamFinish, notifyCompanyOnQuizAttemptRequest, notifyCompanyOnExamAttemptRequest } from '../../lib/notificationService';
 
 /* ─── Mock exam data ─── */
 const EXAM_QUESTIONS = [
@@ -84,7 +85,7 @@ const fmtTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(
 /* ═══════════════════════════════════════════════════════════
    EXAM RESULTS VIEW
    ═══════════════════════════════════════════════════════════ */
-const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImage, isModuleQuiz, onBack, onRetry, onGoHome }) => (
+const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImage, isModuleQuiz, onBack, onRetry, onGoHome, onDownloadCertificate, onRequestAttempt, requestingAttempt }) => (
     <div className="min-h-screen bg-gray-50 flex justify-center" style={{ fontFamily: 'Inter, sans-serif' }}>
         <div className="w-full lg:max-w-md bg-white shadow-xl flex flex-col min-h-screen">
 
@@ -126,7 +127,7 @@ const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImag
                     <p className="text-gray-400 text-sm">
                         {passed
                             ? 'Has demostrado las competencias necesarias para operar maquinaria pesada de nivel avanzado.'
-                            : 'Repasa los módulos y vuelve a intentarlo. Tienes hasta 3 intentos disponibles.'}
+                            : 'Repasa los módulos y vuelve a intentarlo.'}
                     </p>
                 </div>
 
@@ -183,24 +184,48 @@ const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImag
                                 Guardar y Continuar Curso
                             </button>
                         ) : (
-                            <button onClick={onRetry}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
-                                <span className="material-symbols-outlined">refresh</span>
-                                Reintentar Quiz
-                            </button>
+                            onRetry ? (
+                                <button onClick={onRetry}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+                                    <span className="material-symbols-outlined">refresh</span>
+                                    Reintentar Quiz
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={onRequestAttempt}
+                                    disabled={requestingAttempt}
+                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-amber-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined">support_agent</span>
+                                    {requestingAttempt ? 'Enviando Solicitud...' : 'Solicitar Intento al Administrador'}
+                                </button>
+                            )
                         )
                     ) : (
                         passed ? (
-                            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+                            <button 
+                                onClick={onDownloadCertificate}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
                                 <span className="material-symbols-outlined">download</span>
                                 Descargar Certificado
                             </button>
                         ) : (
-                            <button onClick={onRetry}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
-                                <span className="material-symbols-outlined">refresh</span>
-                                Reintentar Examen
-                            </button>
+                            onRetry ? (
+                                <button onClick={onRetry}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+                                    <span className="material-symbols-outlined">refresh</span>
+                                    Reintentar Examen
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={onRequestAttempt}
+                                    disabled={requestingAttempt}
+                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-amber-200 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined">support_agent</span>
+                                    {requestingAttempt ? 'Enviando Solicitud...' : 'Solicitar Intento al Administrador'}
+                                </button>
+                            )
                         )
                     )}
 
@@ -219,7 +244,7 @@ const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImag
                             Volver al Panel de Control
                         </button>
                     )}
-                    {isModuleQuiz && passed && (
+                    {isModuleQuiz && passed && onRetry && (
                         <button onClick={onRetry}
                             className="w-full text-gray-400 hover:text-gray-700 font-semibold py-3 rounded-2xl transition-colors text-sm">
                             Repetir para mejorar nota
@@ -251,16 +276,33 @@ const ExamResults = ({ passed, score, timeUsed, certCode, courseName, courseImag
 /* ═══════════════════════════════════════════════════════════
    EXAM VIEW (question by question)
    ═══════════════════════════════════════════════════════════ */
-const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId = null, courseImage = null, questions: questionsProp = [], onBack, onGoHome, isModuleQuiz = false, onFinish }) => {
+const ExamView = ({ 
+    courseName = 'Operación de Excavadora Nivel II', 
+    courseId = null, 
+    courseImage = null, 
+    questions: questionsProp = [], 
+    onBack, 
+    onGoHome, 
+    isModuleQuiz = false, 
+    onFinish,
+    timeLimit = null,
+    attemptsLimit = null,
+    attemptsCount = 0,
+    viewResultsMode = false,
+    completedScore = null,
+    completedTimeUsed = null,
+    completedCertCode = null,
+    onDownloadCertificate = null,
+    moduleId = null
+}) => {
     const { profile } = useAuth();
-    const TOTAL_TIME = isModuleQuiz ? 15 * 60 : 45 * 60; // Quizzes are shorter
+    const TOTAL_TIME = isModuleQuiz 
+        ? (timeLimit ? timeLimit * 60 : 15 * 60) 
+        : (timeLimit ? timeLimit * 60 : 45 * 60);
 
     // Normalize questions from DB format to Interface format
     const normalizedQuestions = (questionsProp || []).map((q, idx) => {
-        // DB format might be: { text: string, type: string, image_url: string, options: [{text, correct}] }
         const options = (q.options || []).map(opt => typeof opt === 'string' ? opt : opt.text).filter(Boolean);
-        
-        // Find correct index if available
         let correctIndex = -1;
         if (Array.isArray(q.options)) {
             correctIndex = q.options.findIndex(opt => opt.correct === true);
@@ -282,17 +324,42 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
     const [current, setCurrent] = useState(0);
     const [answers, setAnswers] = useState({});
     const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
-    const [submitted, setSubmitted] = useState(false);
-    const [score, setScore] = useState(null);
-    const [certCode, setCertCode] = useState(null);
+    const [submitted, setSubmitted] = useState(viewResultsMode);
+    const [score, setScore] = useState(viewResultsMode ? completedScore : null);
+    const [certCode, setCertCode] = useState(viewResultsMode ? completedCertCode : null);
     const [showExit, setShowExit] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [localAttemptsCount, setLocalAttemptsCount] = useState(attemptsCount);
+    const [requestingAttempt, setRequestingAttempt] = useState(false);
+
+    useEffect(() => {
+        setLocalAttemptsCount(attemptsCount);
+    }, [attemptsCount]);
+
+    const handleRequestAttempt = async () => {
+        if (requestingAttempt) return;
+        setRequestingAttempt(true);
+        try {
+            if (isModuleQuiz) {
+                await notifyCompanyOnQuizAttemptRequest(profile.id, courseId, moduleId);
+            } else {
+                await notifyCompanyOnExamAttemptRequest(profile.id, courseId);
+            }
+            alert('Tu solicitud ha sido enviada exitosamente al administrador.');
+        } catch (e) {
+            console.error('Error requesting attempt:', e);
+            alert('Error al enviar la solicitud. Inténtalo de nuevo.');
+        } finally {
+            setRequestingAttempt(false);
+        }
+    };
 
     // Persistence Key
     const persistKey = `exam_progress_${profile?.id}_${courseId}_${isModuleQuiz ? 'quiz' : 'final'}`;
 
     // Restore progress on mount
     useEffect(() => {
+        if (viewResultsMode) return;
         const saved = localStorage.getItem(persistKey);
         if (saved) {
             try {
@@ -304,37 +371,20 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
                 console.error('Error restoring exam progress:', e);
             }
         }
-    }, [persistKey]);
+    }, [persistKey, viewResultsMode]);
 
     // Save progress on changes
     useEffect(() => {
+        if (viewResultsMode) return;
         if (submitted) {
             localStorage.removeItem(persistKey);
             return;
         }
         const data = { answers, current, timeLeft };
         localStorage.setItem(persistKey, JSON.stringify(data));
-    }, [answers, current, timeLeft, submitted, persistKey]);
+    }, [answers, current, timeLeft, submitted, persistKey, viewResultsMode]);
 
-    /* Timer */
-    useEffect(() => {
-        if (submitted) return;
-        const t = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) { clearInterval(t); handleSubmit(); return 0; }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(t);
-    }, [submitted]);
-
-    const q = questions[current];
-    const totalQ = questions.length;
-    const progress = ((current + 1) / totalQ) * 100;
-    const isLast = current === totalQ - 1;
-    const selectedAnswer = answers[q.id];
-
-    const select = (val) => setAnswers(prev => ({ ...prev, [q.id]: val }));
+    const handleSubmitRef = useRef(null);
 
     const handleSubmit = async () => {
         if (saving) return;
@@ -342,7 +392,6 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
         let correctCount = 0;
         questions.forEach(q => {
             if (q.type === 'open_ended') {
-                // Open ended are not auto-graded, count as correct for now or handle differently
                 if (answers[q.id] && answers[q.id].trim().length > 0) correctCount++;
             } else {
                 if (answers[q.id] === q.correct) correctCount++;
@@ -356,6 +405,8 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
             } else if (profile?.id && courseId) {
                 // Default handling for Final Exams
                 await submitExam(profile.id, courseId, pct, timeUsedSec, answers);
+                // Send notification to company admin
+                await notifyCompanyOnExamFinish(profile.id, courseId, pct, pct >= 70);
                 if (pct >= 70) {
                     const cert = await issueCertificate(profile.id, courseId);
                     setCertCode(cert?.verification_code || null);
@@ -367,9 +418,47 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
         setScore(pct);
         setSubmitted(true);
         setSaving(false);
+        setLocalAttemptsCount(prev => prev + 1);
     };
 
-    const timeUsedMin = Math.ceil((TOTAL_TIME - timeLeft) / 60);
+    useEffect(() => {
+        handleSubmitRef.current = handleSubmit;
+    });
+
+    /* Timer */
+    useEffect(() => {
+        if (submitted || viewResultsMode) return;
+        const t = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) { 
+                    clearInterval(t); 
+                    if (handleSubmitRef.current) handleSubmitRef.current(); 
+                    return 0; 
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(t);
+    }, [submitted, viewResultsMode]);
+
+    const q = questions[current] || {};
+    const totalQ = questions.length;
+    const progress = totalQ > 0 ? ((current + 1) / totalQ) * 100 : 0;
+    const isLast = totalQ > 0 ? current === totalQ - 1 : false;
+    const selectedAnswer = q.id ? answers[q.id] : undefined;
+
+    const select = (val) => q.id && setAnswers(prev => ({ ...prev, [q.id]: val }));
+
+    const timeUsedMin = viewResultsMode 
+        ? (completedTimeUsed || 0) 
+        : Math.ceil((TOTAL_TIME - timeLeft) / 60);
+
+    const attemptsLimitVal = attemptsLimit ?? 3;
+    const currentAttemptVal = submitted 
+        ? (localAttemptsCount || 1) 
+        : (localAttemptsCount !== undefined ? localAttemptsCount + 1 : 1);
+
+    const reachedLimit = currentAttemptVal >= attemptsLimitVal;
 
     /* Results screen */
     if (submitted) {
@@ -383,8 +472,11 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
                 courseImage={courseImage}
                 isModuleQuiz={isModuleQuiz}
                 onBack={onBack}
-                onRetry={() => { setAnswers({}); setCurrent(0); setTimeLeft(TOTAL_TIME); setSubmitted(false); setScore(null); setCertCode(null); }}
+                onRetry={(viewResultsMode || reachedLimit) ? null : () => { setAnswers({}); setCurrent(0); setTimeLeft(TOTAL_TIME); setSubmitted(false); setScore(null); setCertCode(null); }}
                 onGoHome={onGoHome}
+                onDownloadCertificate={onDownloadCertificate}
+                onRequestAttempt={handleRequestAttempt}
+                requestingAttempt={requestingAttempt}
             />
         );
     }
@@ -452,7 +544,9 @@ const ExamView = ({ courseName = 'Operación de Excavadora Nivel II', courseId =
                                 <span className="material-symbols-outlined text-blue-600">history</span>
                                 <div>
                                     <p className="text-[10px] text-blue-400 font-black uppercase tracking-tight">Intento Actual</p>
-                                    <p className="text-lg font-black text-gray-900 leading-none">1 de 3</p>
+                                    <p className="text-lg font-black text-gray-900 leading-none">
+                                        {currentAttemptVal} de {attemptsLimitVal}
+                                    </p>
                                 </div>
                             </div>
                         </div>

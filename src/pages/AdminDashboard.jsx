@@ -5,6 +5,8 @@ import CourseManager from './admin/CourseManager';
 import CertificateGenerator from './admin/CertificateGenerator';
 import WorkerEnrollments from './admin/WorkerEnrollments';
 import CourseEditor from './admin/CourseEditor';
+import PageSolicitudes from './admin/PageSolicitudes';
+import PageChat from './admin/PageChat';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -24,7 +26,7 @@ const AdminDashboard = () => {
 
     const getActiveTab = () => {
         const path = location.pathname.split('/').pop();
-        if (['equipo', 'cursos', 'reportes', 'certificados'].includes(path)) return path;
+        if (['equipo', 'cursos', 'solicitudes', 'chat', 'reportes', 'certificados'].includes(path)) return path;
         return 'inicio';
     };
     const activeTab = getActiveTab();
@@ -33,6 +35,8 @@ const AdminDashboard = () => {
         { id: 'inicio', icon: 'dashboard', label: 'Inicio', path: '/dashboard' },
         { id: 'equipo', icon: 'groups', label: 'Equipo', path: '/dashboard/equipo' },
         { id: 'cursos', icon: 'library_books', label: 'Cursos', path: '/dashboard/cursos' },
+        { id: 'solicitudes', icon: 'notifications_active', label: 'Solicitudes', path: '/dashboard/solicitudes' },
+        { id: 'chat', icon: 'chat', label: 'Chat', path: '/dashboard/chat' },
         { id: 'reportes', icon: 'bar_chart', label: 'Reportes', path: '/dashboard/reportes' },
         { id: 'certificados', icon: 'verified', label: 'Certs.', path: '/dashboard/certificados' },
     ];
@@ -421,6 +425,8 @@ const AdminDashboard = () => {
                             })()} />
 
                             <Route path="equipo" element={<WorkerEnrollments />} />
+                            <Route path="solicitudes" element={<PageSolicitudes />} />
+                            <Route path="chat" element={<PageChat />} />
 
                             <Route path="cursos" element={<CourseManager onNavigate={(id) => navigate(`/dashboard/${id}`)} />} />
                             <Route path=":courseId" element={<CourseEditor />} />
