@@ -232,7 +232,14 @@ const WorkerEnrollments = () => {
         setGenerating(true);
         try {
             const code = certCode();
-            const now = new Date().toISOString();
+            const now = new Date();
+            const validityMonths = row.template?.validity_months !== undefined ? row.template.validity_months : 12;
+            const expiryDate = validityMonths === 0 ? null : new Date(now.getFullYear(), now.getMonth() + validityMonths, now.getDate()).toISOString();
+
+            const customTitleRaw = row.template?.custom_title || '';
+            const maxDownloads = customTitleRaw.includes('|||max_downloads:')
+                ? parseInt(customTitleRaw.split('|||max_downloads:')[1]) || 3
+                : 3;
 
             // Insert certificate record
             const { data: newCert, error } = await supabase
@@ -241,10 +248,10 @@ const WorkerEnrollments = () => {
                     user_id: row.worker.id,
                     course_id: row.course.id,
                     cert_code: code,
-                    issue_date: now,
-                    expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
+                    issue_date: now.toISOString(),
+                    expiry_date: expiryDate,
                     verification_code: 'VER-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
-                    max_downloads: 3,
+                    max_downloads: maxDownloads,
                     download_count: 0,
                     template_id: row.template?.id || null,
                 })

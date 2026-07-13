@@ -26,7 +26,7 @@ const PageSolicitudes = () => {
                 .from('notifications')
                 .select('*, profiles:sender_id(id, full_name, employee_id, email)')
                 .eq('company_id', profile?.company_id)
-                .in('type', ['quiz_attempt_request', 'exam_attempt_request', 'certificate_request'])
+                .in('type', ['quiz_attempt_request', 'exam_attempt_request', 'certificate_request', 'course_reset_request'])
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

@@ -224,6 +224,8 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
     const [requestingQuizId, setRequestingQuizId] = useState(null);
     const [isResetPermitted, setIsResetPermitted] = useState(false);
     const [resettingProgress, setResettingProgress] = useState(false);
+    const [requestingReset, setRequestingReset] = useState(false);
+    const [requestingExamAttempt, setRequestingExamAttempt] = useState(false);
 
     // Sync Exam/Quiz state with URL subPath
     useEffect(() => {
@@ -393,6 +395,77 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         if (onUpdatePath) onUpdatePath('/examen');
     };
 
+    const handleRequestCourseReset = async () => {
+        if (requestingReset) return;
+        setRequestingReset(true);
+        try {
+            // Fetch worker profile details
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('full_name, employee_id')
+                .eq('id', profile.id)
+                .single();
+
+            // Fetch worker company association
+            const { data: workerComp } = await supabase
+                .from('worker_companies')
+                .select('company_id')
+                .eq('worker_id', profile.id)
+                .limit(1)
+                .maybeSingle();
+
+            if (!profileData || !workerComp || !workerComp.company_id) {
+                alert('Tu perfil no está vinculado a una empresa.');
+                return;
+            }
+
+            const companyId = workerComp.company_id;
+
+            // Find company admins
+            const { data: companyAdmins } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('company_id', companyId)
+                .eq('role', 'admin');
+
+            if (companyAdmins && companyAdmins.length > 0) {
+                const notifications = companyAdmins.map(admin => ({
+                    user_id: admin.id,
+                    company_id: companyId,
+                    sender_id: profile.id,
+                    title: 'Solicitud de Reinicio de Curso',
+                    message: `El trabajador ${profileData.full_name} (${profileData.employee_id || 'Sin documento'}) solicita reiniciar su progreso en el curso "${courseData?.title || 'Curso'}".`,
+                    type: 'course_reset_request'
+                }));
+
+                const { error } = await supabase.from('notifications').insert(notifications);
+                if (error) throw error;
+                alert('Tu solicitud de reinicio de curso ha sido enviada exitosamente al administrador.');
+            } else {
+                alert('No se encontraron administradores para esta empresa.');
+            }
+        } catch (e) {
+            console.error('Error requesting course reset:', e);
+            alert('Error al enviar la solicitud. Inténtalo de nuevo.');
+        } finally {
+            setRequestingReset(false);
+        }
+    };
+
+    const handleRequestExamAttempt = async () => {
+        if (requestingExamAttempt) return;
+        setRequestingExamAttempt(true);
+        try {
+            await notifyCompanyOnExamAttemptRequest(profile.id, courseId);
+            alert('Tu solicitud de intento adicional para el examen final ha sido enviada al administrador.');
+        } catch (e) {
+            console.error('Error requesting exam attempt:', e);
+            alert('Error al enviar la solicitud. Inténtalo de nuevo.');
+        } finally {
+            setRequestingExamAttempt(false);
+        }
+    };
+
     const handleExecuteProgressReset = async () => {
         if (!window.confirm('¿Estás seguro de que deseas restablecer por completo este curso? Esto borrará tu progreso de lectura, calificaciones de quices, intentos y certificados emitidos para comenzar desde cero.')) return;
         setResettingProgress(true);
@@ -458,7 +531,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         return (
             <ExamView
                 courseName={activeQuiz.moduleTitle}
-                courseId={courseData?.id}
+                courseId={courseId}
                 courseImage={courseData?.image_url}
                 questions={activeQuiz.questions || []}
                 onBack={() => onUpdatePath('')}
@@ -469,6 +542,8 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                 attemptsLimit={activeQuiz.attempts_limit}
                 attemptsCount={quizProg?.attempts_count || 0}
                 moduleId={activeQuiz.module_id}
+                onRequestAttempt={() => handleRequestQuizAttempt({ id: activeQuiz.module_id }, activeQuiz)}
+                requestingAttempt={requestingQuizId === activeQuiz.id}
             />
         );
     }
@@ -479,7 +554,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         return (
             <ExamView
                 courseName={courseData?.title}
-                courseId={courseData?.id}
+                courseId={courseId}
                 courseImage={courseData?.image_url}
                 questions={finalExam?.questions || []}
                 onBack={() => onUpdatePath('')}
@@ -492,6 +567,8 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                 completedTimeUsed={passedAttempt ? Math.ceil((passedAttempt.time_used_seconds || 0) / 60) : 0}
                 completedCertCode={certificate?.verification_code}
                 onDownloadCertificate={() => onNavigate && onNavigate('certificados')}
+                onRequestAttempt={handleRequestExamAttempt}
+                requestingAttempt={requestingExamAttempt}
             />
         );
     }
@@ -690,11 +767,12 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
                                 </button>
                             ) : (
                                 <button
-                                    disabled
-                                    className="w-full bg-gray-100 text-gray-400 font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs cursor-not-allowed"
+                                    onClick={handleRequestCourseReset}
+                                    disabled={requestingReset}
+                                    className="w-full bg-[#f3b012] hover:bg-[#f3b012]/90 text-black font-black py-3.5 rounded-2xl shadow-lg shadow-amber-100 flex items-center justify-center gap-2 transition-all active:scale-95 text-xs disabled:opacity-50"
                                 >
-                                    <span className="material-symbols-outlined text-base">lock</span>
-                                    Reinicio No Autorizado
+                                    <span className="material-symbols-outlined text-base">support_agent</span>
+                                    {requestingReset ? 'Enviando Solicitud...' : 'Solicitar Reinicio al Administrador'}
                                 </button>
                             )}
                         </div>

@@ -15,21 +15,40 @@ export async function issueCertificate(userId, courseId) {
         .select('*')
         .eq('user_id', userId)
         .eq('course_id', courseId)
-        .single();
+        .maybeSingle();
 
     if (existing) return existing;
 
-    // Set expiry 2 years from now
+    // Fetch template to check validity months and max downloads
+    const { data: template } = await supabase
+        .from('certificate_templates')
+        .select('*')
+        .eq('course_id', courseId)
+        .maybeSingle();
+
+    let validityMonths = 24; // default 2 years (24 months)
+    let maxDownloads = 3;
+
+    if (template) {
+        validityMonths = template.validity_months !== undefined ? template.validity_months : 24;
+        const customTitleRaw = template.custom_title || '';
+        if (customTitleRaw.includes('|||max_downloads:')) {
+            maxDownloads = parseInt(customTitleRaw.split('|||max_downloads:')[1]) || 3;
+        }
+    }
+
     const expiry = new Date();
-    expiry.setFullYear(expiry.getFullYear() + 2);
+    expiry.setMonth(expiry.getMonth() + validityMonths);
 
     const { data, error } = await supabase
         .from('certificates')
         .insert({
             user_id: userId,
             course_id: courseId,
-            expiry_date: expiry.toISOString(),
+            expiry_date: validityMonths === 0 ? null : expiry.toISOString(),
             verification_code: genVerificationCode(userId, courseId),
+            max_downloads: maxDownloads,
+            template_id: template?.id || null,
         })
         .select()
         .single();

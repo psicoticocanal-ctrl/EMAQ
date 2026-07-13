@@ -87,7 +87,7 @@ const AdminDashboard = () => {
                 .from('notifications')
                 .select('id', { count: 'exact', head: true })
                 .eq('company_id', profile.company_id)
-                .in('type', ['quiz_attempt_request', 'exam_attempt_request', 'certificate_request'])
+                .in('type', ['quiz_attempt_request', 'exam_attempt_request', 'certificate_request', 'course_reset_request'])
                 .eq('is_read', false);
             
             if (error) throw error;

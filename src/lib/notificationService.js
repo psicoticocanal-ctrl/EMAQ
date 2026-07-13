@@ -127,7 +127,7 @@ export async function notifyCompanyOnCertificateRequest(workerId, courseId) {
     try {
         const { data: course } = await supabase
             .from('courses')
-            .select('company_id, title')
+            .select('title')
             .eq('id', courseId)
             .single();
 
@@ -135,22 +135,22 @@ export async function notifyCompanyOnCertificateRequest(workerId, courseId) {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, employee_id')
+            .select('full_name, employee_id, company_id')
             .eq('id', workerId)
             .single();
 
-        if (!profile) return;
+        if (!profile || !profile.company_id) return;
 
         const { data: companyAdmins } = await supabase
             .from('profiles')
             .select('id')
-            .eq('company_id', course.company_id)
+            .eq('company_id', profile.company_id)
             .eq('role', 'admin');
 
         if (companyAdmins && companyAdmins.length > 0) {
             const notifications = companyAdmins.map(admin => ({
                 user_id: admin.id,
-                company_id: course.company_id,
+                company_id: profile.company_id,
                 sender_id: workerId,
                 title: 'Solicitud de Certificado',
                 message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha solicitado la emisión de su certificado del curso: ${course.title} tras agotar el límite de descargas.`,
@@ -169,7 +169,7 @@ export async function notifyCompanyOnQuizAttemptRequest(workerId, courseId, modu
     try {
         const { data: course } = await supabase
             .from('courses')
-            .select('company_id, title')
+            .select('title')
             .eq('id', courseId)
             .single();
 
@@ -183,22 +183,22 @@ export async function notifyCompanyOnQuizAttemptRequest(workerId, courseId, modu
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, employee_id')
+            .select('full_name, employee_id, company_id')
             .eq('id', workerId)
             .single();
 
-        if (!profile) return;
+        if (!profile || !profile.company_id) return;
 
         const { data: companyAdmins } = await supabase
             .from('profiles')
             .select('id')
-            .eq('company_id', course.company_id)
+            .eq('company_id', profile.company_id)
             .eq('role', 'admin');
 
         if (companyAdmins && companyAdmins.length > 0) {
             const notifications = companyAdmins.map(admin => ({
                 user_id: admin.id,
-                company_id: course.company_id,
+                company_id: profile.company_id,
                 sender_id: workerId,
                 title: 'Solicitud de Intentos (Quiz)',
                 message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha agotado sus intentos del quiz del módulo "${moduleData?.title || 'Módulo'}" (Curso: ${course.title}) y solicita intentos adicionales para habilitar su certificación.`,
@@ -217,7 +217,7 @@ export async function notifyCompanyOnExamAttemptRequest(workerId, courseId) {
     try {
         const { data: course } = await supabase
             .from('courses')
-            .select('company_id, title')
+            .select('title')
             .eq('id', courseId)
             .single();
 
@@ -225,22 +225,22 @@ export async function notifyCompanyOnExamAttemptRequest(workerId, courseId) {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, employee_id')
+            .select('full_name, employee_id, company_id')
             .eq('id', workerId)
             .single();
 
-        if (!profile) return;
+        if (!profile || !profile.company_id) return;
 
         const { data: companyAdmins } = await supabase
             .from('profiles')
             .select('id')
-            .eq('company_id', course.company_id)
+            .eq('company_id', profile.company_id)
             .eq('role', 'admin');
 
         if (companyAdmins && companyAdmins.length > 0) {
             const notifications = companyAdmins.map(admin => ({
                 user_id: admin.id,
-                company_id: course.company_id,
+                company_id: profile.company_id,
                 sender_id: workerId,
                 title: 'Solicitud de Intentos (Examen)',
                 message: `El trabajador ${profile.full_name} (${profile.employee_id || 'Sin documento'}) ha agotado sus intentos del examen de certificación del curso "${course.title}" y solicita intentos adicionales.`,

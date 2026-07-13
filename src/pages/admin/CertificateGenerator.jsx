@@ -295,18 +295,24 @@ const CertificateGenerator = () => {
     /* ─── Open editor for existing template ─── */
     const openEditor = (tmpl = null) => {
         if (tmpl) {
+            const customTitleRaw = tmpl.custom_title || 'Certifica con orgullo a';
+            const customTitleParts = customTitleRaw.split('|||max_downloads:');
+            const customTitle = customTitleParts[0];
+            const maxDownloads = customTitleParts[1] ? parseInt(customTitleParts[1]) : 3;
+
             setFields({
                 course_id: tmpl.course_id,
                 courseName: tmpl.courses?.title || '',
                 courseCode: tmpl.courses?.course_code || '',
                 issuedBy: tmpl.issued_by || '',
-                customTitle: tmpl.custom_title || 'Certifica con orgullo a',
+                customTitle: customTitle,
                 signatoryName: tmpl.signatory_name || '',
                 signatoryTitle: tmpl.signatory_title || 'Gerente General',
                 signatureUrl: tmpl.signature_url || '',
                 issueDate: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
                 issueDateRaw: new Date().toISOString().slice(0, 10),
                 validityMonths: tmpl.validity_months || 12,
+                maxDownloads: maxDownloads,
                 previewName: 'Juan Pérez',
                 previewCertCode: 'CERT-PREVIEW-001',
             });
@@ -328,7 +334,7 @@ const CertificateGenerator = () => {
                 course_id: fields.course_id,
                 company_id: profile.company_id,
                 issued_by: fields.issuedBy,
-                custom_title: fields.customTitle,
+                custom_title: fields.customTitle + '|||max_downloads:' + (fields.maxDownloads || 3),
                 signatory_name: fields.signatoryName,
                 signatory_title: fields.signatoryTitle,
                 signature_url: fields.signatureUrl || null,
@@ -731,6 +737,24 @@ const CertificateGenerator = () => {
                                         Vence: {(() => { const d = new Date(fields.issueDateRaw + 'T12:00:00'); d.setMonth(d.getMonth() + parseInt(fields.validityMonths)); return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }); })()}
                                     </p>
                                 )}
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 mb-1.5 flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-sm">download_done</span>
+                                    Intentos de descarga permitidos (operador)
+                                </p>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="999"
+                                    className={inputCls}
+                                    value={fields.maxDownloads}
+                                    onChange={e => up('maxDownloads', parseInt(e.target.value) || 3)}
+                                    placeholder="Ej: 3"
+                                />
+                                <p className="text-[10px] text-gray-400 font-bold mt-1">
+                                    Límite de descargas de este certificado por operador.
+                                </p>
                             </div>
                         </div>
 
