@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { createCourse, updateCourse as updateCourseService } from '../../lib/courseService';
 
@@ -525,6 +526,12 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
    Main CourseEditor component
    ════════════════════════════════════════════════════════════ */
 const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBack, onSave }) => {
+    const { courseId } = useParams();
+    const navigate = useNavigate();
+    
+    const handleBack = onBack || (() => navigate('/dashboard/cursos'));
+    const handleSaveCallback = onSave || (() => navigate('/dashboard/cursos'));
+
     const [tab, setTab] = useState('general');
     const [course, setCourse] = useState({
         title: '',
@@ -544,43 +551,75 @@ const CourseEditor = ({ course: initialCourse = null, companyId, createdBy, onBa
     const [finalExam, setFinalExam] = useState([]);
     const [finalExamAttemptsLimit, setFinalExamAttemptsLimit] = useState(3);
     const [finalExamTimeLimit, setFinalExamTimeLimit] = useState(45);
-    const [loading, setLoading] = useState(!!initialCourse?.id);
+    const [loading, setLoading] = useState(!!initialCourse?.id || (!!courseId && courseId !== 'nuevo' && courseId !== 'new'));
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
-    const isNew = !initialCourse?.id;
+    
+    const isNew = !initialCourse?.id && (!courseId || courseId === 'nuevo' || courseId === 'new');
 
     // Load existing data
     useEffect(() => {
-        if (!initialCourse?.id) { setLoading(false); return; }
-        setLoading(true);
-        Promise.all([
-            supabase.from('modules').select('*').eq('course_id', initialCourse.id).order('sort_order'),
-            supabase.from('evaluations').select('*').eq('course_id', initialCourse.id)
-        ]).then(([{ data: mods }, { data: evals }]) => {
-            if (mods) {
-                // Load each module's quiz
-                Promise.all(mods.map(async m => {
-                    const { data: mEvals } = await supabase.from('evaluations')
-                        .select('*').eq('module_id', m.id).eq('type', 'module_quiz');
-                    return {
-                        ...m,
-                        expanded: false,
-                        quiz: mEvals?.[0]?.questions || [],
-                        _evalId: mEvals?.[0]?.id || null,
-                        attempts_limit: mEvals?.[0]?.attempts_limit ?? 3,
-                        time_limit: mEvals?.[0]?.time_limit ?? 15
-                    };
-                })).then(enriched => setModules(enriched));
+        const loadData = async () => {
+            const activeId = initialCourse?.id || (courseId && courseId !== 'nuevo' && courseId !== 'new' ? courseId : null);
+            if (!activeId) {
+                setLoading(false);
+                return;
             }
-            const exam = evals?.find(e => e.type === 'final_exam');
-            if (exam) {
-                setFinalExam(exam.questions || []);
-                setFinalExamAttemptsLimit(exam.attempts_limit ?? 3);
-                setFinalExamTimeLimit(exam.time_limit ?? 45);
+            setLoading(true);
+            try {
+                // If we loaded via URL parameters, fetch the course info first
+                if (!initialCourse?.id) {
+                    const { data: dbCourse, error } = await supabase
+                        .from('courses')
+                        .select('*')
+                        .eq('id', activeId)
+                        .single();
+
+                    if (error) throw error;
+                    if (dbCourse) {
+                        setCourse(prev => ({
+                            ...prev,
+                            ...dbCourse,
+                            role: dbCourse.job_role || prev.role
+                        }));
+                    }
+                }
+
+                const [{ data: mods }, { data: evals }] = await Promise.all([
+                    supabase.from('modules').select('*').eq('course_id', activeId).order('sort_order'),
+                    supabase.from('evaluations').select('*').eq('course_id', activeId)
+                ]);
+
+                if (mods) {
+                    const enriched = await Promise.all(mods.map(async m => {
+                        const { data: mEvals } = await supabase.from('evaluations')
+                            .select('*').eq('module_id', m.id).eq('type', 'module_quiz');
+                        return {
+                            ...m,
+                            expanded: false,
+                            quiz: mEvals?.[0]?.questions || [],
+                            _evalId: mEvals?.[0]?.id || null,
+                            attempts_limit: mEvals?.[0]?.attempts_limit ?? 3,
+                            time_limit: mEvals?.[0]?.time_limit ?? 15
+                        };
+                    }));
+                    setModules(enriched);
+                }
+
+                const exam = evals?.find(e => e.type === 'final_exam');
+                if (exam) {
+                    setFinalExam(exam.questions || []);
+                    setFinalExamAttemptsLimit(exam.attempts_limit ?? 3);
+                    setFinalExamTimeLimit(exam.time_limit ?? 45);
+                }
+            } catch (e) {
+                console.error('Error loading course data:', e);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-        });
-    }, [initialCourse?.id]);
+        };
+        loadData();
+    }, [initialCourse?.id, courseId]);
 
     const updateField = (key, val) => setCourse(prev => ({ ...prev, [key]: val }));
 

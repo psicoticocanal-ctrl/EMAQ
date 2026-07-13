@@ -127,7 +127,7 @@ const WorkerEnrollments = () => {
                 supabase.from('progress').select('user_id, module_id, status, completed_at').in('user_id', workerIds),
                 supabase.from('certificates').select('id, user_id, course_id, cert_code, issue_date, expiry_date, verification_code, download_count, max_downloads, template_id').in('course_id', courseIds).in('user_id', workerIds),
                 supabase.from('exam_attempts').select('user_id, course_id, score, passed, completed_at').in('course_id', courseIds).in('user_id', workerIds),
-                supabase.from('course_assignments').select('user_id, course_id, created_at').in('course_id', courseIds)
+                supabase.from('course_assignments').select('worker_id, course_id, created_at').in('course_id', courseIds)
             ]);
 
             const modules = modulesRes.data || [];
@@ -170,7 +170,7 @@ const WorkerEnrollments = () => {
             
             // Map course assignments first (the source of truth for who is in which course)
             courseAssignments.forEach(assignment => {
-                const worker = workersMap.get(assignment.user_id);
+                const worker = workersMap.get(assignment.worker_id);
                 const course = courses.find(c => c.id === assignment.course_id);
                 if (!worker || !course) return;
 
@@ -206,7 +206,7 @@ const WorkerEnrollments = () => {
 
             // Add workers with NO assignments yet (but linked to company)
             workers.forEach(worker => {
-                const isAssigned = courseAssignments.some(a => a.user_id === worker.id);
+                const isAssigned = courseAssignments.some(a => a.worker_id === worker.id);
                 if (!isAssigned) {
                     rows.push({
                         worker,
@@ -501,6 +501,50 @@ const WorkerEnrollments = () => {
                                             warn={selected.cert.expiry_date && new Date(selected.cert.expiry_date) < new Date()}
                                         />
                                         <InfoRow icon="download" label="Descargas" value={`${selected.cert.download_count} / ${selected.cert.max_downloads}`} />
+                                        
+                                        <div className="mt-3 p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-between gap-3 shadow-inner">
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase block leading-none">Descargas Máximas</label>
+                                                <input 
+                                                    type="number"
+                                                    min="1"
+                                                    max="999"
+                                                    value={selected.cert.max_downloads}
+                                                    onChange={async (e) => {
+                                                        const newVal = parseInt(e.target.value) || 3;
+                                                        // Update state locally
+                                                        setSelected(prev => ({
+                                                            ...prev,
+                                                            cert: { ...prev.cert, max_downloads: newVal }
+                                                        }));
+                                                        // Update database
+                                                        await supabase
+                                                            .from('certificates')
+                                                            .update({ max_downloads: newVal })
+                                                            .eq('id', selected.cert.id);
+                                                    }}
+                                                    className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-black text-gray-900 outline-none focus:border-blue-500 mt-1"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    // Reset download count to 0
+                                                    setSelected(prev => ({
+                                                        ...prev,
+                                                        cert: { ...prev.cert, download_count: 0 }
+                                                    }));
+                                                    await supabase
+                                                        .from('certificates')
+                                                        .update({ download_count: 0 })
+                                                        .eq('id', selected.cert.id);
+                                                    alert('Intentos de descarga restablecidos con éxito.');
+                                                }}
+                                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black rounded-lg transition-all shadow-sm active:scale-95 flex items-center gap-1 shrink-0"
+                                            >
+                                                <span className="material-symbols-outlined text-xs">restart_alt</span>
+                                                Reiniciar a 0
+                                            </button>
+                                        </div>
                                     </>
                                 )}
                             </div>

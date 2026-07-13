@@ -1,28 +1,45 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 const WorkerLogin = () => {
-    const { signIn, user } = useAuth();
+    const { signIn, user, profile } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
 
-    if (!loading && user) return <Navigate to="/dashboard" replace />;
+    if (!loading && user && profile?.role === 'worker') return <Navigate to="/dashboard" replace />;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            const { error } = await signIn({ email: formData.email, password: formData.password });
-            if (error) throw error;
+            const { data: signInData, error: signInErr } = await signIn({ email: formData.email, password: formData.password });
+            if (signInErr) throw signInErr;
+
+            // Fetch profile role directly to verify
+            const { data: prof, error: profErr } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', signInData.user.id)
+                .single();
+
+            if (profErr || !prof) {
+                await supabase.auth.signOut();
+                throw new Error('No se pudo obtener el rol del usuario.');
+            }
+
+            if (prof.role !== 'worker') {
+                await supabase.auth.signOut();
+                throw new Error('Esta cuenta no está registrada como Trabajador.');
+            }
+
             navigate('/dashboard');
         } catch (err) {
-            setError(err.message === 'Email not confirmed'
-                ? 'Correo no confirmado. Contacta a tu administrador.'
-                : 'Credenciales incorrectas. Verifica tu correo y contraseña.');
+            setError(err.message || 'Credenciales incorrectas. Verifica tu correo y contraseña.');
         } finally {
             setLoading(false);
         }

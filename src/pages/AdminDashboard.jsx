@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import CourseManager from './admin/CourseManager';
@@ -8,6 +8,39 @@ import CourseEditor from './admin/CourseEditor';
 import PageSolicitudes from './admin/PageSolicitudes';
 import PageChat from './admin/PageChat';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+
+const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Beautiful synthesized chime
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        gain1.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.15);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain2.gain.setValueAtTime(0.08, ctx.currentTime + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.08);
+        osc2.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+        console.error('AudioContext play failed:', e);
+    }
+};
 
 const AdminDashboard = () => {
     const { profile, signOut } = useAuth();
@@ -23,6 +56,9 @@ const AdminDashboard = () => {
     const [realStats, setRealStats] = useState({ completions: '0', active: '0', assigned: '0', certs: '0' });
     const [alerts, setAlerts] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [unreadSolCount, setUnreadSolCount] = useState(0);
+    const prevSolCount = useRef(0);
+    const isFirstSolLoad = useRef(true);
 
     const getActiveTab = () => {
         const path = location.pathname.split('/').pop();
@@ -41,9 +77,36 @@ const AdminDashboard = () => {
         { id: 'certificados', icon: 'verified', label: 'Certs.', path: '/dashboard/certificados' },
     ];
 
+    const loadUnreadSolicitudes = async () => {
+        if (!profile?.company_id) return;
+        try {
+            const { count, error } = await supabase
+                .from('notifications')
+                .select('id', { count: 'exact', head: true })
+                .eq('company_id', profile.company_id)
+                .in('type', ['quiz_attempt_request', 'exam_attempt_request', 'certificate_request'])
+                .eq('is_read', false);
+            
+            if (error) throw error;
+            const currentCount = count || 0;
+            setUnreadSolCount(currentCount);
+
+            if (!isFirstSolLoad.current && currentCount > prevSolCount.current) {
+                playNotificationSound();
+            }
+            prevSolCount.current = currentCount;
+            isFirstSolLoad.current = false;
+        } catch (e) {
+            console.error('Error loading unread solicitudes:', e);
+        }
+    };
+
     useEffect(() => {
         if (profile?.company_id) {
             loadDashboardData();
+            loadUnreadSolicitudes();
+            const interval = setInterval(loadUnreadSolicitudes, 4000);
+            return () => clearInterval(interval);
         }
     }, [profile?.company_id]);
 
@@ -157,6 +220,11 @@ const AdminDashboard = () => {
                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === item.id ? 'bg-[#f3b012] text-black' : 'text-gray-600 hover:bg-gray-100'}`}>
                                             <span className="material-symbols-outlined text-xl">{item.icon}</span>
                                             {item.label}
+                                            {item.id === 'solicitudes' && unreadSolCount > 0 && (
+                                                <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'solicitudes' ? 'bg-black text-[#f3b012]' : 'bg-red-500 text-white'}`}>
+                                                    {unreadSolCount}
+                                                </span>
+                                            )}
                                         </Link>
                                     </li>
                                 ))}
@@ -197,6 +265,11 @@ const AdminDashboard = () => {
                                         {item.icon}
                                     </span>
                                     {item.label}
+                                    {item.id === 'solicitudes' && unreadSolCount > 0 && (
+                                        <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'solicitudes' ? 'bg-black text-[#f3b012]' : 'bg-red-500 text-white'}`}>
+                                            {unreadSolCount}
+                                        </span>
+                                    )}
                                 </Link>
                             </li>
                         ))}
@@ -224,9 +297,19 @@ const AdminDashboard = () => {
                             <h2 className="text-black text-base font-black leading-tight truncate">{profile?.companies?.name || 'Panel de Administración'}</h2>
                             <p className="text-xs text-gray-400 font-medium">{profile?.companies?.location || 'División de Maquinaria Pesada'}</p>
                         </div>
-                        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 shrink-0">
-                            <span className="material-symbols-outlined text-black text-xl">notifications</span>
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white"></span>
+                        <button 
+                            onClick={() => navigate('/dashboard/solicitudes')}
+                            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 shrink-0"
+                            title="Ver Solicitudes"
+                        >
+                            <span className="material-symbols-outlined text-black text-xl">
+                                {unreadSolCount > 0 ? 'notifications_active' : 'notifications'}
+                            </span>
+                            {unreadSolCount > 0 && (
+                                <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full border border-white animate-pulse">
+                                    {unreadSolCount}
+                                </span>
+                            )}
                         </button>
                     </div>
                 </header>
@@ -429,7 +512,7 @@ const AdminDashboard = () => {
                             <Route path="chat" element={<PageChat />} />
 
                             <Route path="cursos" element={<CourseManager onNavigate={(id) => navigate(`/dashboard/${id}`)} />} />
-                            <Route path=":courseId" element={<CourseEditor />} />
+                            <Route path=":courseId" element={<CourseEditor companyId={profile?.company_id} createdBy={profile?.id} />} />
 
                             <Route path="reportes" element={
                                 <section className="p-4 lg:p-6 text-center py-20">

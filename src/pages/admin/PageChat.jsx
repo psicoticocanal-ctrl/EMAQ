@@ -2,6 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
+const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Beautiful synthesized chime
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        gain1.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.15);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain2.gain.setValueAtTime(0.08, ctx.currentTime + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.08);
+        osc2.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+        console.error('AudioContext play failed:', e);
+    }
+};
+
 const PageChat = () => {
     const { profile } = useAuth();
     const [workers, setWorkers] = useState([]);
@@ -12,7 +45,11 @@ const PageChat = () => {
     const [loadingWorkers, setLoadingWorkers] = useState(true);
     const [sending, setSending] = useState(false);
     const [closing, setClosing] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState({});
     const chatEndRef = useRef(null);
+    const prevTotalUnread = useRef(0);
+    const prevMessagesLength = useRef(0);
+    const isFirstLoadUnreadRef = useRef(true);
 
     useEffect(() => {
         if (profile) {
@@ -31,6 +68,40 @@ const PageChat = () => {
             return () => clearInterval(interval);
         }
     }, [selectedWorker?.id]);
+
+    const loadUnreadCounts = async () => {
+        if (!profile?.id) return;
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('sender_id')
+                .eq('receiver_id', profile.id)
+                .eq('is_read', false);
+            if (error) throw error;
+            const counts = {};
+            let total = 0;
+            data?.forEach(m => {
+                counts[m.sender_id] = (counts[m.sender_id] || 0) + 1;
+                total++;
+            });
+            setUnreadCounts(counts);
+            if (!isFirstLoadUnreadRef.current && total > prevTotalUnread.current) {
+                playNotificationSound();
+            }
+            prevTotalUnread.current = total;
+            isFirstLoadUnreadRef.current = false;
+        } catch (e) {
+            console.error('Error loading unread counts:', e);
+        }
+    };
+
+    useEffect(() => {
+        if (profile?.id) {
+            loadUnreadCounts();
+            const interval = setInterval(loadUnreadCounts, 4000);
+            return () => clearInterval(interval);
+        }
+    }, [profile?.id]);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,7 +128,7 @@ const PageChat = () => {
             if (workerIds.length > 0) {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('id, full_name, employee_id')
+                    .select('id, full_name, employee_id, email')
                     .in('id', workerIds)
                     .order('full_name', { ascending: true });
                 if (error) throw error;
@@ -94,6 +165,15 @@ const PageChat = () => {
             if (error) throw error;
             setMessages(data || []);
 
+            const isFirstLoad = prevMessagesLength.current === 0;
+            if (data && data.length > prevMessagesLength.current) {
+                const lastMsg = data[data.length - 1];
+                if (!isFirstLoad && lastMsg && lastMsg.sender_id !== profile?.id) {
+                    playNotificationSound();
+                }
+            }
+            prevMessagesLength.current = data ? data.length : 0;
+
             // Mark received messages as read
             const unreadIds = (data || [])
                 .filter(m => m.sender_id === selectedWorker.id && !m.is_read)
@@ -104,6 +184,7 @@ const PageChat = () => {
                     .from('messages')
                     .update({ is_read: true })
                     .in('id', unreadIds);
+                loadUnreadCounts();
             }
         } catch (e) {
             console.error('Error loading messages:', e);
@@ -240,8 +321,15 @@ const PageChat = () => {
                                         {w.full_name?.charAt(0).toUpperCase() || 'W'}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-black text-gray-900 truncate">{w.full_name}</p>
-                                        <p className="text-[10px] text-gray-400 truncate">{w.job_title || 'Operador'}</p>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                            <p className="text-xs font-black text-gray-900 truncate">{w.full_name}</p>
+                                            {unreadCounts[w.id] > 0 && (
+                                                <span className="px-1.5 py-0.5 bg-green-500 text-white text-[8px] font-black rounded-full shrink-0 animate-pulse">
+                                                    {unreadCounts[w.id]}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 truncate">{w.email || 'Sin correo'}</p>
                                         <p className="text-[9px] font-mono text-gray-400 truncate">{w.employee_id || 'Sin ID'}</p>
                                     </div>
                                 </button>

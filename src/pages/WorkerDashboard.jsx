@@ -11,6 +11,39 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { getNotifications, markAsRead, notifyCompanyOnEntry, notifyCompanyOnCertificateRequest } from '../lib/notificationService';
 
+const playNotificationSound = () => {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Beautiful synthesized chime
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        gain1.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.15);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain2.gain.setValueAtTime(0.08, ctx.currentTime + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.08);
+        osc2.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+        console.error('AudioContext play failed:', e);
+    }
+};
+
 /* ─── Helpers ─── */
 const CATEGORY_ICONS = {
     'Maquinaria Pesada': { icon: 'construction', cls: 'bg-blue-50 text-blue-600' },
@@ -675,6 +708,9 @@ const WorkerDashboard = () => {
     const [certs, setCerts] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
     const [loadingCerts, setLoadingCerts] = useState(true);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
+    const prevChatCount = useRef(0);
+    const isFirstChatLoad = useRef(true);
     const [workerCompanies, setWorkerCompanies] = useState([]);
     const [joining, setJoining] = useState(false);
     const [joiningCourse, setJoiningCourse] = useState(false);
@@ -735,6 +771,37 @@ const WorkerDashboard = () => {
             setLoadingCerts(false);
         }
     };
+
+    const loadUnreadChatCount = async () => {
+        if (!profile?.id) return;
+        try {
+            const { count, error } = await supabase
+                .from('messages')
+                .select('id', { count: 'exact', head: true })
+                .eq('receiver_id', profile.id)
+                .eq('is_read', false);
+            
+            if (error) throw error;
+            const currentCount = count || 0;
+            setUnreadChatCount(currentCount);
+
+            if (!isFirstChatLoad.current && currentCount > prevChatCount.current) {
+                playNotificationSound();
+            }
+            prevChatCount.current = currentCount;
+            isFirstChatLoad.current = false;
+        } catch (e) {
+            console.error('Error loading unread chat count:', e);
+        }
+    };
+
+    useEffect(() => {
+        if (profile?.id) {
+            loadUnreadChatCount();
+            const interval = setInterval(loadUnreadChatCount, 4000);
+            return () => clearInterval(interval);
+        }
+    }, [profile?.id]);
 
     useEffect(() => { loadData(); }, [profile?.id, location.pathname]);
 
@@ -952,7 +1019,13 @@ const WorkerDashboard = () => {
                         {tabs.map(t => (
                             <li key={t.id}>
                                 <Link to={t.path} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-bold text-sm ${activeTab === t.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                    <span className="material-symbols-outlined text-xl">{t.icon}</span>{t.label}
+                                    <span className="material-symbols-outlined text-xl">{t.icon}</span>
+                                    {t.label}
+                                    {t.id === 'chat' && unreadChatCount > 0 && (
+                                        <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'chat' ? 'bg-white text-blue-600' : 'bg-red-500 text-white'}`}>
+                                            {unreadChatCount}
+                                        </span>
+                                    )}
                                 </Link>
                             </li>
                         ))}
@@ -1062,7 +1135,19 @@ const WorkerDashboard = () => {
                 <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 py-2">
                     <ul className="flex justify-around">
                         {tabs.map(t => (
-                            <li key={t.id}><Link to={t.path} className={`flex flex-col items-center p-2 ${activeTab === t.id ? 'text-blue-600' : 'text-gray-400'}`}><span className="material-symbols-outlined">{t.icon}</span><span className="text-[10px] font-bold">{t.label}</span></Link></li>
+                            <li key={t.id}>
+                                <Link to={t.path} className={`flex flex-col items-center p-2 relative ${activeTab === t.id ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    <div className="relative">
+                                        <span className="material-symbols-outlined">{t.icon}</span>
+                                        {t.id === 'chat' && unreadChatCount > 0 && (
+                                            <span className="absolute -top-1 -right-2 px-1.5 py-0.5 bg-red-500 text-white text-[7px] font-black rounded-full leading-none">
+                                                {unreadChatCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] font-bold">{t.label}</span>
+                                </Link>
+                            </li>
                         ))}
                     </ul>
                 </nav>
