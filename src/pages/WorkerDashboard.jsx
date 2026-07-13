@@ -127,7 +127,7 @@ const CertPreview = React.forwardRef(({ fields, workerName = null, certCodeWorke
                 />
                 <div style={{ ...s.divider, background: 'linear-gradient(90deg,transparent,#c9a227,transparent)', margin: pdfMode ? '0 auto 10px' : '0 auto 3px' }} />
                 <p style={{ color: '#888', ...s.subtitle, textTransform: 'uppercase', fontWeight: '800' }}>
-                    {fields.customTitle || 'CERTIFICA QUE'}
+                    {(fields.customTitle || '').split('|||max_downloads:')[0] || 'CERTIFICA QUE'}
                 </p>
             </div>
 

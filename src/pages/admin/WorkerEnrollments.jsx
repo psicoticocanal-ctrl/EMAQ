@@ -53,7 +53,7 @@ const CertPreview = React.forwardRef(({ tmpl, workerName, courseName, courseCode
                     }} 
                 />
                 <div style={divShort} />
-                <p style={s.subtitle}>{tmpl?.custom_title || 'CERTIFICA QUE'}</p>
+                <p style={s.subtitle}>{(tmpl?.custom_title || '').split('|||max_downloads:')[0] || 'CERTIFICA QUE'}</p>
             </div>
 
             {/* Worker name */}
