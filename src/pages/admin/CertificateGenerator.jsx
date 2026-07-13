@@ -84,7 +84,7 @@ const CertPreview = React.forwardRef(({ fields, workerName = null, certCodeWorke
                 </p>
                 <div style={{ ...s.divider, background: 'linear-gradient(90deg,transparent,#c9a227,transparent)', margin: pdfMode ? '0 auto 14px' : '0 auto 4px' }} />
                 <p style={{ color: '#888', ...s.subtitle, textTransform: 'uppercase' }}>
-                    {fields.customTitle || 'Certifica con orgullo a'}
+                    {(fields.customTitle || '').split('|||max_downloads:')[0] || 'Certifica con orgullo a'}
                 </p>
             </div>
 
@@ -215,6 +215,7 @@ const CertificateGenerator = () => {
         issueDate: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
         issueDateRaw: new Date().toISOString().slice(0, 10),
         validityMonths: 12,
+        maxDownloads: 3,
         previewName: 'Juan Pérez',
         previewCertCode: 'CERT-PREVIEW-001',
     };

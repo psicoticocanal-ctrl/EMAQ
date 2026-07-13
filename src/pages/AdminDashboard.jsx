@@ -59,6 +59,9 @@ const AdminDashboard = () => {
     const [unreadSolCount, setUnreadSolCount] = useState(0);
     const prevSolCount = useRef(0);
     const isFirstSolLoad = useRef(true);
+    const [unreadChatCount, setUnreadChatCount] = useState(0);
+    const prevChatCount = useRef(0);
+    const isFirstChatLoad = useRef(true);
 
     const getActiveTab = () => {
         const path = location.pathname.split('/').pop();
@@ -101,11 +104,38 @@ const AdminDashboard = () => {
         }
     };
 
+    const loadUnreadChatCount = async () => {
+        if (!profile?.id) return;
+        try {
+            const { count, error } = await supabase
+                .from('messages')
+                .select('id', { count: 'exact', head: true })
+                .eq('receiver_id', profile.id)
+                .eq('is_read', false);
+            
+            if (error) throw error;
+            const currentCount = count || 0;
+            setUnreadChatCount(currentCount);
+
+            if (!isFirstChatLoad.current && currentCount > prevChatCount.current) {
+                playNotificationSound();
+            }
+            prevChatCount.current = currentCount;
+            isFirstChatLoad.current = false;
+        } catch (e) {
+            console.error('Error loading unread chat count:', e);
+        }
+    };
+
     useEffect(() => {
         if (profile?.company_id) {
             loadDashboardData();
             loadUnreadSolicitudes();
-            const interval = setInterval(loadUnreadSolicitudes, 4000);
+            loadUnreadChatCount();
+            const interval = setInterval(() => {
+                loadUnreadSolicitudes();
+                loadUnreadChatCount();
+            }, 4000);
             return () => clearInterval(interval);
         }
     }, [profile?.company_id]);
@@ -225,6 +255,11 @@ const AdminDashboard = () => {
                                                     {unreadSolCount}
                                                 </span>
                                             )}
+                                            {item.id === 'chat' && unreadChatCount > 0 && (
+                                                <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'chat' ? 'bg-black text-[#f3b012]' : 'bg-red-500 text-white'}`}>
+                                                    {unreadChatCount}
+                                                </span>
+                                            )}
                                         </Link>
                                     </li>
                                 ))}
@@ -268,6 +303,11 @@ const AdminDashboard = () => {
                                     {item.id === 'solicitudes' && unreadSolCount > 0 && (
                                         <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'solicitudes' ? 'bg-black text-[#f3b012]' : 'bg-red-500 text-white'}`}>
                                             {unreadSolCount}
+                                        </span>
+                                    )}
+                                    {item.id === 'chat' && unreadChatCount > 0 && (
+                                        <span className={`ml-auto px-2 py-0.5 text-[9px] font-black rounded-full shrink-0 ${activeTab === 'chat' ? 'bg-black text-[#f3b012]' : 'bg-red-500 text-white'}`}>
+                                            {unreadChatCount}
                                         </span>
                                     )}
                                 </Link>
