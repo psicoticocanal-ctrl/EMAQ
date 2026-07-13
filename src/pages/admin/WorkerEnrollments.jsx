@@ -15,7 +15,7 @@ const GOLD = '#c9a227';
 /* ─── CertPreview (inline, only for manual PDF generation) ─── */
 const CertPreview = React.forwardRef(({ tmpl, workerName, courseName, courseCode, certCodeVal, issueDate }, ref) => {
     const s = {
-        wrap: { width: '1920px', height: '1080px', padding: '56px 120px', borderRadius: 0, background: '#ffffff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', fontFamily: "'Inter', sans-serif" },
+        wrap: { width: '1920px', height: '1080px', padding: '56px 120px', borderRadius: 0, background: 'linear-gradient(180deg, #ffffff 0%, #fffdec 60%, #fef9d9 100%)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', fontFamily: "'Inter', sans-serif" },
         company: { fontSize: '36px', letterSpacing: '12px', color: GOLD, fontWeight: '900', textTransform: 'uppercase', marginBottom: '14px' },
         subtitle: { fontSize: '22px', letterSpacing: '6px', color: '#888', textTransform: 'uppercase' },
         name: { fontSize: '96px', fontFamily: "'Playfair Display', Georgia, serif", color: '#1a1a2e', fontWeight: '700', fontStyle: 'italic', lineHeight: 1.1, marginBottom: '32px' },
@@ -40,24 +40,38 @@ const CertPreview = React.forwardRef(({ tmpl, workerName, courseName, courseCode
             ))}
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,#c9a22706 0px,#c9a22706 1px,transparent 1px,transparent 36px)', pointerEvents: 'none' }} />
 
-            <div style={{ textAlign: 'center', marginBottom: '30px', position: 'relative', zIndex: 1 }}>
-                <p style={s.company}>{tmpl?.issued_by || 'EMPRESA'}</p>
+            {/* Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+                <img 
+                    src="/imagenes/LOGO_EMAQ_TRANSPARENT.png" 
+                    alt="EMAQ Logo" 
+                    crossOrigin="anonymous"
+                    style={{ 
+                        height: '160px', 
+                        objectFit: 'contain', 
+                        marginBottom: '12px' 
+                    }} 
+                />
                 <div style={divShort} />
-                <p style={s.subtitle}>{tmpl?.custom_title || 'Certifica con orgullo a'}</p>
+                <p style={s.subtitle}>{tmpl?.custom_title || 'CERTIFICA QUE'}</p>
             </div>
 
-            <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '28px', position: 'relative', zIndex: 1 }}>
+            {/* Worker name */}
+            <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '18px', position: 'relative', zIndex: 1 }}>
                 <div>
                     <h1 style={s.name}>{workerName}</h1>
                     <div style={divLong} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <p style={s.body}>ha completado satisfactoriamente el programa de certificación en</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '85%', margin: '0 auto' }}>
+                    <p style={{ ...s.body, color: '#555', fontWeight: '700', lineHeight: 1.4 }}>
+                        ASISTIÓ Y DEMOSTRÓ SUS COMPETENCIAS CON UNA INTENSIDAD HORARIA DE 60 HORAS TEÓRICO - PRÁCTICAS EN LA OPERACIÓN DE LOS SIGUIENTES EQUIPOS Y TERMINANDO SATISFACTORIAMENTE EL CURSO REALIZADO:
+                    </p>
                     <h2 style={s.course}>{courseName}</h2>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '30px', position: 'relative', zIndex: 1 }}>
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '25px', marginBottom: '25px', position: 'relative', zIndex: 1 }}>
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {tmpl?.signature_url && <img src={tmpl.signature_url} alt="Firma" crossOrigin="anonymous" style={{ height: '100px', maxWidth: '260px', objectFit: 'contain', display: 'block', marginBottom: '10px' }} />}
                     <div style={lineFooter} />
@@ -73,6 +87,28 @@ const CertPreview = React.forwardRef(({ tmpl, workerName, courseName, courseCode
                     <p style={s.footerLabel}>{issueDate || fmt(new Date())}</p>
                     <p style={s.footerValue}>Fecha de emisión</p>
                 </div>
+            </div>
+
+            {/* Resolution Text */}
+            <div style={{ 
+                position: 'absolute', 
+                bottom: '35px', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                textAlign: 'center', 
+                width: '100%',
+                zIndex: 2 
+            }}>
+                <p style={{ 
+                    color: '#777', 
+                    fontSize: '14px', 
+                    fontWeight: '800', 
+                    letterSpacing: '1.5px', 
+                    textTransform: 'uppercase',
+                    margin: 0
+                }}>
+                    RESOLUCIÓN 2888 DE 2007 DECRETO 4904 DE 2009 DEL MEN
+                </p>
             </div>
         </div>
     );

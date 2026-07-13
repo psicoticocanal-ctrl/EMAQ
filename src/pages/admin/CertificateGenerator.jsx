@@ -55,7 +55,7 @@ const CertPreview = React.forwardRef(({ fields, workerName = null, certCodeWorke
     return (
         <div ref={ref} style={{
             ...s.wrap,
-            background: '#ffffff',
+            background: 'linear-gradient(180deg, #ffffff 0%, #fffdec 60%, #fef9d9 100%)',
             border: pdfMode ? 'none' : '1.5px solid #e5e0d0',
             boxShadow: pdfMode ? 'none' : '0 4px 32px rgba(0,0,0,0.07)',
             display: 'flex', flexDirection: 'column',
@@ -78,40 +78,47 @@ const CertPreview = React.forwardRef(({ fields, workerName = null, certCodeWorke
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(45deg,#c9a22706 0px,#c9a22706 1px,transparent 1px,transparent 36px)', pointerEvents: 'none' }} />
 
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: pdfMode ? '30px' : '4%', position: 'relative', zIndex: 1 }}>
-                <p style={{ color: '#c9a227', ...s.company, fontWeight: '900', textTransform: 'uppercase', marginBottom: pdfMode ? '14px' : '4px' }}>
-                    {fields.issuedBy || 'NOMBRE DE LA EMPRESA'}
-                </p>
-                <div style={{ ...s.divider, background: 'linear-gradient(90deg,transparent,#c9a227,transparent)', margin: pdfMode ? '0 auto 14px' : '0 auto 4px' }} />
-                <p style={{ color: '#888', ...s.subtitle, textTransform: 'uppercase' }}>
-                    {(fields.customTitle || '').split('|||max_downloads:')[0] || 'Certifica con orgullo a'}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: pdfMode ? '20px' : '3%', position: 'relative', zIndex: 1 }}>
+                <img 
+                    src="/imagenes/LOGO_EMAQ_TRANSPARENT.png" 
+                    alt="EMAQ Logo" 
+                    crossOrigin="anonymous"
+                    style={{ 
+                        height: pdfMode ? '160px' : 'clamp(50px, 7.5vw, 105px)', 
+                        objectFit: 'contain', 
+                        marginBottom: pdfMode ? '12px' : '3px' 
+                    }} 
+                />
+                <div style={{ ...s.divider, background: 'linear-gradient(90deg,transparent,#c9a227,transparent)', margin: pdfMode ? '0 auto 10px' : '0 auto 3px' }} />
+                <p style={{ color: '#888', ...s.subtitle, textTransform: 'uppercase', fontWeight: '800' }}>
+                    {(fields.customTitle || '').split('|||max_downloads:')[0] || 'CERTIFICA QUE'}
                 </p>
             </div>
 
             {/* Worker name */}
-            <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: pdfMode ? '28px' : '3%', position: 'relative', zIndex: 1 }}>
+            <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: pdfMode ? '18px' : '2%', position: 'relative', zIndex: 1 }}>
                 <div>
                     <h1 style={{
                         fontFamily: "'Playfair Display', Georgia, serif",
                         color: '#1a1a2e', ...s.name, fontWeight: '700',
-                        fontStyle: 'italic', lineHeight: 1.1, marginBottom: pdfMode ? '32px' : '2%',
+                        fontStyle: 'italic', lineHeight: 1.1, marginBottom: pdfMode ? '24px' : '1.5%',
                     }}>
                         {workerName || fields.previewName || 'Nombre del Trabajador'}
                     </h1>
                     <div style={{ ...s.nameDivider, background: 'linear-gradient(90deg,transparent,#c9a227,transparent)', margin: '0 auto' }} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: pdfMode ? '16px' : '5px' }}>
-                    <p style={{ color: '#777', ...s.body, textTransform: 'uppercase' }}>
-                        ha completado satisfactoriamente el programa de certificación en
+                <div style={{ display: 'flex', flexDirection: 'column', gap: pdfMode ? '12px' : '4px', maxWidth: '85%', margin: '0 auto' }}>
+                    <p style={{ color: '#555', ...s.body, textTransform: 'uppercase', fontWeight: '700', lineHeight: 1.4 }}>
+                        ASISTIÓ Y DEMOSTRÓ SUS COMPETENCIAS CON UNA INTENSIDAD HORARIA DE 60 HORAS TEÓRICO - PRÁCTICAS EN LA OPERACIÓN DE LOS SIGUIENTES EQUIPOS Y TERMINANDO SATISFACTORIAMENTE EL CURSO REALIZADO:
                     </p>
-                    <h2 style={{ color: '#c9a227', ...s.course, fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                    <h2 style={{ color: '#c9a227', ...s.course, fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1.2 }}>
                         {fields.courseName || 'NOMBRE DEL CURSO'}
                     </h2>
                 </div>
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: pdfMode ? '30px' : '4%', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: pdfMode ? '25px' : '3.5%', marginBottom: pdfMode ? '25px' : '3.5%', position: 'relative', zIndex: 1 }}>
                 {/* Signatory + digital signature image */}
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: pdfMode ? '8px' : '2px' }}>
                     {fields.signatureUrl && (
@@ -153,6 +160,28 @@ const CertPreview = React.forwardRef(({ fields, workerName = null, certCodeWorke
                     </p>
                     <p style={{ color: '#999', ...s.footerValue }}>Fecha de emisión</p>
                 </div>
+            </div>
+
+            {/* Resolution Text */}
+            <div style={{ 
+                position: 'absolute', 
+                bottom: pdfMode ? '35px' : '3.5%', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                textAlign: 'center', 
+                width: '100%',
+                zIndex: 2 
+            }}>
+                <p style={{ 
+                    color: '#777', 
+                    fontSize: pdfMode ? '14px' : 'clamp(5px, 0.75vw, 10px)', 
+                    fontWeight: '800', 
+                    letterSpacing: '1.5px', 
+                    textTransform: 'uppercase',
+                    margin: 0
+                }}>
+                    RESOLUCIÓN 2888 DE 2007 DECRETO 4904 DE 2009 DEL MEN
+                </p>
             </div>
         </div>
     );
