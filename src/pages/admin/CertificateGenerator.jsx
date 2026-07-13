@@ -350,6 +350,13 @@ const CertificateGenerator = () => {
                 ({ error } = await supabase.from('certificate_templates').upsert({ ...payload }, { onConflict: 'course_id' }));
             }
             if (error) throw error;
+
+            // Propagate max downloads limit changes to all existing certificates for this course
+            await supabase
+                .from('certificates')
+                .update({ max_downloads: parseInt(fields.maxDownloads) || 3 })
+                .eq('course_id', fields.course_id);
+
             await loadAll();
             if (publish) {
                 setView('templates');

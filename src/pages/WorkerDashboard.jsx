@@ -633,10 +633,10 @@ const PageCertificados = ({ certs = [], loadingCerts, onDownload, downloadingId,
                                 <code className="text-[9px] font-black text-gray-400">{c.cert_code || c.verification_code}</code>
                             </div>
                             <p className="text-[10px] text-gray-400 font-semibold">
-                                Descargas: <span className="text-gray-700 font-bold">{c.download_count || 0}/3</span>
+                                Descargas: <span className="text-gray-700 font-bold">{c.download_count || 0}/{c.max_downloads || 3}</span>
                             </p>
                         </div>
-                        {c.download_count >= 3 ? (
+                        {c.download_count >= (c.max_downloads || 3) ? (
                             c.requested_manually ? (
                                 <span className="text-[10px] text-amber-600 font-black bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 shrink-0">
                                     Solicitud Enviada

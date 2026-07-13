@@ -587,7 +587,7 @@ const CourseViewer = ({ courseId: courseIdProp, subPath, course: courseProp, onB
         try {
             await markModuleComplete(profile.id, activeModule.id);
             // Refresh progress
-            const prog = await getCourseProgress(profile.id, courseProp.id);
+            const prog = await getCourseProgress(profile.id, courseId);
             setProgress(prog);
             // Move to next if possible
             if (activeModuleIdx < modules.length - 1) {
